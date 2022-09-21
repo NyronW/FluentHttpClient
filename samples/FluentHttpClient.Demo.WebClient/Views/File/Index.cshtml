@@ -1,0 +1,17 @@
+﻿
+<form asp-action="index" asp-controller="file" enctype="multipart/form-data" method="post">
+
+    @if (ViewData["Message"] != null)
+    {
+        <h5 class="text-info">@ViewData["Message"]</h5>
+    }
+
+    <div class="form-control">
+        <label class="form-label" for="file">Select File:</label>
+        <input type="file" class="form-control" name="file" id="file" accepts="images\*" />
+    </div>
+
+    <div class="pt-3">
+        <button class="btn btn-primary">Upload</button>
+    </div>
+</form>

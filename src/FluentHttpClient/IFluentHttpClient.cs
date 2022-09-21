@@ -11,7 +11,9 @@ public interface IFluentHttpClient
     IAssignEndpoint Endpoint(string endpoint);
 }
 
-public interface IAssignEndpoint : IAssignHeaders, IAssignArguments, ISetCorrelationId, ISetContentType, ISendRequest, ISendRequestWithBody, ISendAuthenticateOrAttached
+public interface IAssignEndpoint : IAssignHeaders, IAssignArguments, 
+    ISetCorrelationId, ISetContentType, ISendRequest, 
+    ISendRequestWithBody, ISendAuthenticateOrAttached, IAttachFiles
 {
     ISendOrCancel SetUserAgent(string userAgent);
 }
@@ -67,10 +69,11 @@ public interface IAttachFiles
 {
     ISendFileActions AttachFiles(string[] files);
     ISendFileActions AttachFile(string fullPath);
+    ISendFileActions AttachFile(string name, Stream stream);
 }
 
 
-public interface ISendFileActions : IAssignCancellationToken, ISendRequestWithBody, ISetAuhtentication
+public interface ISendFileActions : IAssignCancellationToken, ISendRequestWithBody, ISetAuhtentication, IUploadFile
 {
 
 }
@@ -93,6 +96,12 @@ public interface ISendRequestWithBody
     Task<HttpResponseMessage> PostAsync<TRequest>(TRequest request);
     Task<HttpResponseMessage> PostAsync(HttpContent content);
     Task<TResponse> PostAsync<TResponse>(HttpContent content);
+
+}
+
+public interface IUploadFile
+{
+    Task<HttpResponseMessage> PostAsync();
 }
 
 

@@ -21,5 +21,10 @@ public static class FluentHttpClientExtensions
         var correlationId = headerValues.First();
         return client.WithCorrelationId(correlationId);
     }
+
+    public static ISendFileActions AttachFile(this IAttachFiles attachFiles, IFormFile file)
+    {
+        return attachFiles.AttachFile(file.FileName, file.OpenReadStream());
+    }
 }
 

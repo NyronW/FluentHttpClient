@@ -29,7 +29,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     private string _clientSecret = null!;
     private string[] _scopes = null!;
     private bool _requestToken = false;
-    private string[] _files = null!;
+    private List<KeyValuePair<string, Stream>> _files = new();
 
     public FilterCollection Filters { get; } = new();
 
@@ -60,7 +60,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
             _client.DefaultRequestHeaders.Remove(header.Key);
 
         _headers.Clear();
-        _files = null!;
+        _files.Clear();
         _scopes = null!;
 
         return this;
@@ -216,12 +216,24 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     #region IAttachFiles
     public ISendFileActions AttachFiles(string[] files)
     {
-        _files = files;
+        var streams = files.Select(f => new FileInfo(f)).Select(file => file.Exists
+                ? new KeyValuePair<string, Stream>(file.Name, file.OpenRead())
+                : throw new FileNotFoundException($"There's no file matching path '{file.FullName}'.")
+        );
+
+        _files.AddRange(streams);
 
         return this;
     }
 
     public ISendFileActions AttachFile(string fullPath) => AttachFiles(new[] { fullPath });
+    
+    public ISendFileActions AttachFile(string name, Stream stream)
+    {
+        _files.Add(new(name, stream));
+
+        return this;
+    }
     #endregion
 
     #region ISendRequest
@@ -260,20 +272,15 @@ public sealed class FluentHttpClient : IFluentHttpClient,
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
         }
 
-        if (_files is { Length: > 0 })
+        if (_files is { Count: > 0 })
         {
-            var files = _files.Select(f => new FileInfo(f)).Select(file => file.Exists
-                    ? new KeyValuePair<string, Stream>(file.Name, file.OpenRead())
-                    : throw new FileNotFoundException($"There's no file matching path '{file.FullName}'.")
-            );
-
             var content = new MultipartFormDataContent();
             if (request.Content != null)
             {
                 content.Add(request.Content);
             }
 
-            foreach (var file in files)
+            foreach (var file in _files)
             {
                 var streamContent = new StreamContent(file.Value);
                 content.Add(streamContent, file.Key, file.Key);
@@ -343,6 +350,16 @@ public sealed class FluentHttpClient : IFluentHttpClient,
             var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
             return model;
         }
+    }
+    #endregion
+
+    #region IUploadFile
+    public async Task<HttpResponseMessage> PostAsync()
+    {
+        var uri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
+        var request = new HttpRequestMessage(HttpMethod.Post, uri);
+
+        return await SendAsync(request);
     }
     #endregion
 

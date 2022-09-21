@@ -43,7 +43,7 @@ public class TodoController : Controller
 
         var respMsg = await client
             .Endpoint("/api/v1/todos")
-            .WithHeader("x-request-client-type", "net60-console")
+            .WithHeader("x-request-client-type", "net60-aspnet")
             .WithCorrelationId("R5cCI6IkpXVCJ9.post")
             .UsingJsonFormat()
             .WithCancellationToken(cts.Token)

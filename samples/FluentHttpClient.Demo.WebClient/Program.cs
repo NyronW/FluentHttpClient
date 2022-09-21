@@ -16,6 +16,10 @@ builder.Services.AddFluentHttp("identity-server", builder =>
          .AddFilter<TimerHttpClientFilter>()
          .WithTimeout(20)
          .Register();
+ }).AddFluentHttp("file-upload", builder =>
+ {
+     builder.WithBaseUrl("https://localhost:18963/")
+        .WithTimeout(TimeSpan.FromMinutes(2));
  });
 
 
