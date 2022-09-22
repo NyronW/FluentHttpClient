@@ -37,7 +37,7 @@ builder.Services.AddFluentHttp("identity-server", builder =>
      builder.WithBaseUrl("https://localhost:18963/")
         .WithTimeout(TimeSpan.FromMinutes(2));
  });
-//...
+```
 
 Inject the IFluentHttpClientFactory where you need to work with an HttpClient instance.
 
@@ -82,7 +82,7 @@ public class TodoController : Controller
         return authToken;
     }  
 }
-//...
+```
 
 ### Register a fluent http client
 
@@ -96,12 +96,15 @@ builder.Services.AddFluentHttp("identity-server", builder =>
     builder.WithTimeout(10);
 })
 
-builder.Services.AddFluentHttp<FileUploaderService>(builder =>
+builder.Services.AddFluentHttp<TodoController>(builder =>
  {
      builder.WithBaseUrl("https://localhost:18963/")
-        .WithTimeout(TimeSpan.FromMinutes(2));
+         .WithHeader("x-api-version", "1.0.0-beta")
+         .AddFilter<TimerHttpClientFilter>()
+         .WithTimeout(20)
+         .Register();
  })
-//...
+```
 
 When registering the fluent http client the Register method must be called to complete the process, however the library will automaticaly call the method if it is not explicitly called by your code.
 
@@ -109,4 +112,22 @@ When registering the fluent http client the Register method must be called to co
 
 To get and instance of a registerd fluent http client, you simply need to inject the IFluentHttpClientFactory and call its Get method using the named or stronly typed version.
 
+```csharp
+public class TodoController : Controller
+{
+    private readonly IFluentHttpClientFactory _clientFactory;
 
+    public TodoController(IFluentHttpClientFactory clientFactory)
+    {
+        _clientFactory = clientFactory;
+    }
+
+    public async Task<IActionResult> Index(int pageNo = 1, int pageSize = 10)
+    {
+        var client = _clientFactory.Get<TodoController>();
+
+       //...
+       
+    }
+ }
+```
