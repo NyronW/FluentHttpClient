@@ -4,9 +4,9 @@
 
 <form method="post" action="create">
 
-    @if (ViewData["Message"] != null)
+    @if (ViewData["ErrorMessage"] != null)
     {
-        <h5>@ViewData["Message"]</h5>
+        <h5 class="text-danger">@ViewData["ErrorMessage"]</h5>
     }
 
     <div class="form-group">

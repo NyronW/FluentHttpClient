@@ -4,6 +4,14 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>1.0.0</Version>
+    <Authors>Nyron Williams</Authors>
+    <Description>Fluent API for working with HttpClient</Description>
+    <RepositoryUrl>https://github.com/NyronW/YAFLHttp</RepositoryUrl>
+    <PackageTags>Fluent Http, Http Client, C#</PackageTags>
+    <PackageId>YAFLHttp</PackageId>
+    <Product>YAFLHttp</Product>
   </PropertyGroup>
 
   <ItemGroup>

@@ -49,6 +49,11 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
 
         public override async Task<IResult> HandleRequestAsync(TodoItemDto model, HttpRequest httpRequest, CancellationToken cancellationToken = default)
         {
+            if (model.Title.StartsWith("error"))
+            {
+                return Results.StatusCode(StatusCodes.Status502BadGateway);
+            }
+
             var id = await _repository.CreateAsync(model);
 
             //use content negotiation

@@ -7,13 +7,16 @@
     var prevPageNo = pageNo - 1;
 
     if (prevPageNo < 1) prevPageNo = 1;
+
+    var cPageSize = Context.Request.Query["pagesize"];
+    var pageSize = string.IsNullOrEmpty(cPageSize) ? 10 : Convert.ToInt32(cPageSize);
 }
 <h1>Todo List</h1>
 <hr />
 
 @if (TempData["Message"] != null)
 {
-    <h5>@TempData["Message"]</h5>
+    <h5 class="text-info">@TempData["Message"]</h5>
 }
 
 <div class="pt-3">
@@ -48,11 +51,11 @@
     @if (pageNo > 1)
     {
         <div class="col-2">
-            <a class="btn btn-primary" asp-action="index" asp-route-pageno="@prevPageNo">Prev Page</a>
+            <a class="btn btn-primary" asp-action="index" asp-route-pageno="@prevPageNo" asp-route-pagesize="@pageSize">Prev Page</a>
         </div>
     }
 
     <div class="col-2">
-        <a class="btn btn-primary" asp-action="index" asp-route-pageno="@nextPageNo">Next Page</a>
+        <a class="btn btn-primary" asp-action="index" asp-route-pageno="@nextPageNo" asp-route-pagesize="@pageSize">Next Page</a>
     </div>
 </div>

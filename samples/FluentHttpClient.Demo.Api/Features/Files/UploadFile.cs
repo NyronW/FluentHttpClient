@@ -21,6 +21,11 @@ public class UploadFile : IEndpoint
             if (file.Length == 0 && string.IsNullOrEmpty(file.FileName))
                 continue;
 
+            if (file.FileName.StartsWith("error")) //simulate retryable feature on client
+            {
+                return Results.StatusCode(StatusCodes.Status502BadGateway);
+            }
+
             var tempfile = CreateTempfilePath();
             using var stream = File.OpenWrite(tempfile);
             await file.CopyToAsync(stream);

@@ -56,25 +56,48 @@ public class TodoController : Controller
         {
             if (result.Retryable)
             {
-                ViewData["Message"] = "Retryable error received";
+                result = await respMsg.RetryResultAsync<TodoItem>(client);
+
+                if (result.Success)
+                {
+                    TempData["Message"] = $"Todo item created with id:{result.Data.Id}";
+                    return RedirectToAction("Index");
+                }
             }
+
+            ViewData["ErrorMessage"] = respMsg.ReasonPhrase;
 
             return View(todoItem);
         }
 
         TempData["Message"] = $"Todo item created with id:{result.Data.Id}";
-
         return RedirectToAction("Index");
     }
 
     public async Task<IActionResult> Details(string id)
     {
-        var item = await _clientFactory.Get<TodoController>()
+        var response = await _clientFactory.Get<TodoController>()
             .Endpoint($"/api/v1/todos/{id}")
             .WithCorrelationId("R5cCI6IkpXVCJ9.get")
             .UsingXmlFormat()
             .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
-            .GetAsync<TodoItem>();
+            .GetAsync();
+
+        var result = await response.GetResult<TodoItem>();
+
+        if (result.Failure)
+        {
+            TempData["Message"] = result switch
+            {
+                NotFoundResult<TodoItem> notFoundResult => notFoundResult.Message,
+                ErrorResult<TodoItem> errorResult => errorResult.Message,
+                _ => "Unhandled error occured while searching for item"
+            };
+
+            return RedirectToAction("Index");
+        }
+
+        var item = result.Data;
 
         return View(item);
     }

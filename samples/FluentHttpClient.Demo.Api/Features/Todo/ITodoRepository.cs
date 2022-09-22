@@ -48,6 +48,13 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
             return Task.FromResult(values);
         }
 
-        public Task<TodoItem> GetById(string id) => Task.FromResult(items[id]);
+        public Task<TodoItem> GetById(string id)
+        {
+            if(!items.ContainsKey(id)) return Task.FromResult<TodoItem>(null);
+
+            var item = items[id];
+
+            return Task.FromResult(item);
+        }
     }
 }
