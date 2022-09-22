@@ -110,7 +110,7 @@ When registering the fluent http client the Register method must be called to co
 
 ### Working with a fluent http client
 
-To get and instance of a registerd fluent http client, you simply need to inject the IFluentHttpClientFactory and call its Get method using the named or stronly typed version.
+To get and instance of a registerd fluent http client, you simply need to inject the IFluentHttpClientFactory and call its Get method using the named or strongly typed version.
 
 ```csharp
 public class TodoController : Controller
@@ -130,4 +130,16 @@ public class TodoController : Controller
        
     }
  }
+```
+You can set request properties such as http headers, querystrings, correlation Id, content type,authentication scheme and attach files for upload to a remote server.
+
+```csharp
+var client = _httpClientFactory.Get("file-upload");
+
+var respMsg = await client
+    .Endpoint("/api/v1/files")
+    .WithHeader("x-request-client-type", "net60-aspnet")
+    .WithCorrelationId("R5cCI6IkpXVCJ9.post")
+    .AttachFile(file)
+    .PostAsync();
 ```
