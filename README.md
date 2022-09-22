@@ -1,6 +1,7 @@
 # YAFLHttp
 Yet Another Fluent Library for Http client (YAFLHttp) is a fluent API for working with HTTP client class that seeks to provide a simply 
-and intuitive devloper experience
+and intuitive devloper experience. Its fluent interface allows you send an HTTP request and parse the response by hiding away the details such as 
+deserialisation, content negotiation, and URL encoding:
 
 ### Installing YAFLHttp
 
@@ -82,3 +83,30 @@ public class TodoController : Controller
     }  
 }
 //...
+
+### Register a fluent http client
+
+You can sent a few properties on the http client during registration such as base url, http headers, request time and http filters.
+Http clients can be register by name or strongly type approach which makes selecting the correct client even easier.
+
+```csharp
+
+builder.Services.AddFluentHttp("identity-server", builder =>
+{
+    builder.WithTimeout(10);
+})
+
+builder.Services.AddFluentHttp<FileUploaderService>(builder =>
+ {
+     builder.WithBaseUrl("https://localhost:18963/")
+        .WithTimeout(TimeSpan.FromMinutes(2));
+ })
+//...
+
+When registering the fluent http client the Register method must be called to complete the process, however the library will automaticaly call the method if it is not explicitly called by your code.
+
+### Working with a fluent http client
+
+To get and instance of a registerd fluent http client, you simply need to inject the IFluentHttpClientFactory and call its Get method using the named or stronly typed version.
+
+
