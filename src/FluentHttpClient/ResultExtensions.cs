@@ -9,3 +9,4 @@ public static class ResultExtensions
         throw new Exception($"You have forgotten to match '{result.GetType().Name}'");
     }
 }
+

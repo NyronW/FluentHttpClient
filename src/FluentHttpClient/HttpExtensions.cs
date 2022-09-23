@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Formatting;
+using System.Net.Http.Headers;
 
 namespace FluentHttpClient;
 
@@ -14,7 +15,7 @@ public static class HttpExtensions
         HttpStatusCode.TooManyRequests
     };
 
-    public static async Task<Result<TModel>> GetResult<TModel>(this HttpResponseMessage response, CancellationToken token = default)
+    public static async Task<Result<TModel>> GetResultAsync<TModel>(this HttpResponseMessage response, CancellationToken token = default)
     {
         if (response == null) return new ErrorResult<TModel>("No response return from http call");
 
@@ -60,7 +61,16 @@ public static class HttpExtensions
     {
         var message = await RetryAsync(response, client, token);
 
-        return await message.GetResult<TModel>();
+        return await message.GetResultAsync<TModel>();
+    }
+
+    public static HeaderValue<T> GetValue<T>(this HttpResponseHeaders headers, string name)
+    {
+        if (!headers.TryGetValues(name, out var rawValues)) return new();
+
+        var value = (T)Convert.ChangeType(rawValues.First(), typeof(T));
+
+        return new(value);
     }
 
     internal static async Task<HttpRequestMessage> CloneAsync(this HttpRequestMessage request)

@@ -50,7 +50,7 @@ public class TodoController : Controller
             .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
             .PostAsync(todoItem);
 
-        var result = await respMsg.GetResult<TodoItem>();
+        var result = await respMsg.GetResultAsync<TodoItem>();
 
         if (result.Failure)
         {
@@ -83,7 +83,7 @@ public class TodoController : Controller
             .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
             .GetAsync();
 
-        var result = await response.GetResult<TodoItem>();
+        var result = await response.GetResultAsync<TodoItem>();
 
         if (result.Failure)
         {

@@ -126,14 +126,14 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     #endregion
 
     #region IAssignHeaders
-    public IAssignEndpoint WithHeaders(IEnumerable<KeyValuePair<string, string>>? arguments)
+    public IAssignEndpoint WithHeaders(IEnumerable<KeyValuePair<string, string>>? headers)
     {
-        if (arguments == null)
+        if (headers == null)
         {
-            throw new ArgumentException($"'{nameof(arguments)}' cannot be null or whitespace.", nameof(arguments));
+            throw new ArgumentException($"'{nameof(headers)}' cannot be null or whitespace.", nameof(headers));
         }
 
-        foreach (var arg in arguments)
+        foreach (var arg in headers)
         {
             if (string.IsNullOrWhiteSpace(arg.Key)) continue;
 
@@ -255,6 +255,9 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
     {
         BuildFilterInstances();
+
+        if(request.RequestUri == null) 
+            request.RequestUri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
 
         var logger = _serviceProvider.GetService<ILogger<FluentHttpClient>>();
         var pair = _headers.SingleOrDefault(h => h.Key.Equals(Headers.CorrelationId, StringComparison.OrdinalIgnoreCase));
@@ -387,7 +390,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
         SetUserAgent($"FluentHttpClient/{version} (+http://github.com/nyronw/FluentHttpClient)");
     }
 
-    private Uri BuildUrl(Uri baseUrl, string resource)
+    internal static Uri BuildUrl(Uri baseUrl, string resource)
     {
         if (Uri.TryCreate(resource, UriKind.Absolute, out Uri absoluteUrl))
             return absoluteUrl;

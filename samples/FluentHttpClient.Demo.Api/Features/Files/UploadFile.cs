@@ -1,7 +1,9 @@
-﻿using MinimalEndpoints;
+﻿using Microsoft.AspNetCore.Authorization;
+using MinimalEndpoints;
 
 namespace FluentHttpClient.Demo.Api.Features.Files;
 
+[Authorize]
 public class UploadFile : IEndpoint
 {
     public string Pattern => "/files";
@@ -15,6 +17,7 @@ public class UploadFile : IEndpoint
         if (!request.HasFormContentType) return Results.BadRequest();
 
         var form = await request.ReadFormAsync();
+        var tempfile = string.Empty;
 
         foreach (var file in form.Files)
         {
@@ -26,10 +29,12 @@ public class UploadFile : IEndpoint
                 return Results.StatusCode(StatusCodes.Status502BadGateway);
             }
 
-            var tempfile = CreateTempfilePath();
+            tempfile = CreateTempfilePath();
             using var stream = File.OpenWrite(tempfile);
             await file.CopyToAsync(stream);
         }
+
+        request.HttpContext.Response.Headers.Add("x-file-name", Path.GetFileName(tempfile));
 
         return Results.Ok();
     }

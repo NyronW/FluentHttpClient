@@ -21,7 +21,7 @@ public interface IAssignEndpoint : IAssignHeaders, IAssignArguments,
 public interface IAssignHeaders
 {
     IAssignEndpoint WithHeader(string key, string value);
-    IAssignEndpoint WithHeaders(IEnumerable<KeyValuePair<string, string>>? arguments);
+    IAssignEndpoint WithHeaders(IEnumerable<KeyValuePair<string, string>>? headers);
 }
 
 public interface IAssignArguments
