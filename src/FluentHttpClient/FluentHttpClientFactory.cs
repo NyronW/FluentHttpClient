@@ -54,7 +54,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         if (descriptor != null)
         {
             if (!string.IsNullOrWhiteSpace(descriptor.BaseUrl)) http.BaseAddress = new Uri(descriptor.BaseUrl);
-            if (descriptor.Timeout != null) http.Timeout = descriptor.Timeout.Value;
+            if (descriptor.Timeout != TimeSpan.Zero) http.Timeout = descriptor.Timeout!.Value;
 
             foreach (var header in descriptor.Headers)
                 http.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToString());
