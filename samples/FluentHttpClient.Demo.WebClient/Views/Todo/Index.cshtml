@@ -58,4 +58,18 @@
     <div class="col-2">
         <a class="btn btn-primary" asp-action="index" asp-route-pageno="@nextPageNo" asp-route-pagesize="@pageSize">Next Page</a>
     </div>
+    <div class="col-5">
+        @if (ViewData["TotalItems"] != null)
+        {
+            <b>Total Items: @ViewData["TotalItems"]</b>
+        }
+    </div>
+    <div class="col-1 align-content-end">
+        Page Size
+    </div>
+    <div class="col-2">
+        <a asp-action="index" asp-route-pageno="@pageNo" asp-route-pagesize="10">10</a> &nbsp;
+        <a asp-action="index" asp-route-pageno="@pageNo" asp-route-pagesize="20">20</a> &nbsp;
+        <a asp-action="index" asp-route-pageno="@pageNo" asp-route-pagesize="50">50</a> &nbsp;
+    </div>
 </div>

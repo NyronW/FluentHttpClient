@@ -30,9 +30,11 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
         /// <returns>Returns all available todo items</returns>
         /// <response code="200">Returns all available items</response>
         /// <response code="500">Internal server error occured</response>
-        public async Task<IEnumerable<TodoItem>> SendAsync(int pageNo = 1, int pageSize = 10)
+        public async Task<IEnumerable<TodoItem>> SendAsync(HttpResponse response, int pageNo = 1, int pageSize = 10)
         {
             var items = await _repository.GetAllAsync();
+
+            response.Headers.Add("x-total-items", items.Count().ToString());
 
             items = items.Skip((pageNo - 1) * pageSize).Take(pageSize);
 

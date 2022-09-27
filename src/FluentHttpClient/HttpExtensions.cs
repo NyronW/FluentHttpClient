@@ -15,11 +15,14 @@ public static class HttpExtensions
         HttpStatusCode.TooManyRequests
     };
 
+    public static bool IsRetryable(this HttpStatusCode statusCode)
+     => RetryableStatusCodes.Contains(statusCode);
+
     public static async Task<Result<TModel>> GetResultAsync<TModel>(this HttpResponseMessage response, CancellationToken token = default)
     {
         if (response == null) return new ErrorResult<TModel>("No response return from http call");
 
-        if (RetryableStatusCodes.Contains(response.StatusCode))
+        if (response.StatusCode.IsRetryable())
         {
             return new ErrorResult<TModel>($"Received retryable status code '{response.StatusCode}'", true);
         }
@@ -104,5 +107,4 @@ public static class HttpExtensions
 
         return clone;
     }
-
 }

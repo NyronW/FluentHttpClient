@@ -17,14 +17,19 @@ public class TodoController : Controller
         var client = _clientFactory.Get<TodoController>();
         var bearer = await GetAuthToken();
 
-        var items = await client
+        var response = await client
           .Endpoint("/api/v1/todos")
           .WithArguments(new { pageNo = pageNo, pageSize = pageSize })
           .WithGeneratedCorelationId()
           .UsingBearerToken(bearer.Token)
-          .GetAsync<TodoItem[]>();
+          .GetAsync();
 
-        return View(items);
+        var result = await response.GetResultAsync<TodoItem[]>();
+        var totalItems = response.Headers.GetValue<int>("x-total-items");
+
+        if (totalItems.HasValue) ViewData["TotalItems"] = totalItems.Value;
+
+        return View(result.Data);
     }
 
     public IActionResult Create()

@@ -14,7 +14,7 @@ builder.Services.AddFluentHttp("identity-server", builder =>
      builder.WithBaseUrl("https://localhost:18963/")
          .WithHeader("x-api-version", "1.0.0-beta")
          .AddFilter<TimerHttpClientFilter>()
-         .WithTimeout(20)
+         //.WithTimeout(20)
          .Register();
  }).AddFluentHttp("file-upload", builder =>
  {
