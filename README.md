@@ -143,3 +143,65 @@ var respMsg = await client
     .AttachFile(file)
     .PostAsync();
 ```
+
+The library has built in support for work with oauth2 client credentials flow which makes it much easier to integrate with many REST based APIs.  You can also used bearer token or basic authentication when communicating with APIs.
+
+```csharp
+//...
+
+var client = _clientFactory.Get<TodoController>();
+var cts = new CancellationTokenSource();
+
+var respMsg = await client
+    .Endpoint("/api/v1/todos")
+    .WithHeader("x-request-client-type", "net60-aspnet")
+    .WithCorrelationId("R5cCI6IkpXVCJ9.post")
+    .UsingJsonFormat()
+    .WithCancellationToken(cts.Token)
+    .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
+    .PostAsync(todoItem);
+
+//..
+```
+#### Retrying failed requests
+ You are able to check if a failed request can be retried and resend the request with relative ease.
+ 
+ ```csharp
+ //..
+ 
+ var respMsg = await client
+    .Endpoint("/api/v1/todos")
+    .WithHeader("x-request-client-type", "net60-aspnet")
+    .WithCorrelationId("R5cCI6IkpXVCJ9.post")
+    .UsingJsonFormat()
+    .PostAsync(todoItem);
+            
+    var retryable = respMsg.StatusCode.IsRetryable();
+    if(retryable)
+    {
+        //do some stuff
+    }
+
+    //or use the request objects to test if request is retryable
+
+    var result = await respMsg.GetResultAsync<TodoItem>();
+
+    if (result.Failure)
+    {
+        if (result.Retryable)
+        {
+            result = await respMsg.RetryResultAsync<TodoItem>(client);
+
+            if (result.Success)
+            {
+                TempData["Message"] = $"Todo item created with id:{result.Data.Id}";
+                return RedirectToAction("Index");
+            }
+        }
+
+        ViewData["ErrorMessage"] = respMsg.ReasonPhrase;
+
+        return View(todoItem);
+    }
+
+```
