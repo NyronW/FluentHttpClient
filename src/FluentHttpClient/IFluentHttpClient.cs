@@ -11,6 +11,11 @@ public interface IFluentHttpClient
     IAssignEndpoint Endpoint(string endpoint);
 }
 
+public interface ISetHttpHandler : IAssignEndpoint
+{
+    ISendOrCancel SetHandler();
+}
+
 public interface IAssignEndpoint : IAssignHeaders, IAssignArguments, 
     ISetCorrelationId, ISetContentType, ISendRequest, 
     ISendRequestWithBody, ISendAuthenticateOrAttached, IAttachFiles
@@ -96,7 +101,6 @@ public interface ISendRequestWithBody
     Task<HttpResponseMessage> PostAsync<TRequest>(TRequest request);
     Task<HttpResponseMessage> PostAsync(HttpContent content);
     Task<TResponse> PostAsync<TResponse>(HttpContent content);
-
 }
 
 public interface IUploadFile

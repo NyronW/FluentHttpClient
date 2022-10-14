@@ -42,11 +42,13 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
             throw new ArgumentException($"'{nameof(identifier)}' cannot be null or whitespace.", nameof(identifier));
         }
 
-        var descriptor = ClientDescriptions[identifier];
-        if (descriptor == null && !createIfNotFound)
+        if (!ClientDescriptions.ContainsKey(identifier) && !createIfNotFound)
         {
             throw new ArgumentException($"No client configuration found for identifier:'{nameof(identifier)}'.", nameof(identifier));
         }
+
+        var descriptor = ClientDescriptions.ContainsKey(identifier) ?
+            ClientDescriptions[identifier] : null;
 
         var http = _httpClientFactory.CreateClient(identifier);
         http.DefaultRequestHeaders.Clear();
