@@ -9,11 +9,17 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
         Task<TodoItem> GetById(string id);
     }
 
+    /// <summary>
+    /// Todo repository
+    /// </summary>
     public class TodoRepository : ITodoRepository
     {
         private readonly Dictionary<string, TodoItem> items = new();
         private readonly Faker _faker = new();
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public TodoRepository()
         {
             if (!items.Any())
@@ -32,7 +38,11 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
                 }
             }
         }
-
+        /// <summary>
+        /// Creates todo item
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         public Task<string> CreateAsync(TodoItemDto model)
         {
             var id = _faker.Random.Replace("###-??#");
@@ -42,12 +52,21 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
             return Task.FromResult(id);
         }
 
+        /// <summary>
+        /// Gets all todo items
+        /// </summary>
+        /// <returns></returns>
         public Task<IEnumerable<TodoItem>> GetAllAsync()
         {
             var values = items.Select(i => i.Value);
             return Task.FromResult(values);
         }
 
+        /// <summary>
+        /// Get single todo item for specified ID
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public Task<TodoItem> GetById(string id)
         {
             if(!items.ContainsKey(id)) return Task.FromResult<TodoItem>(null);

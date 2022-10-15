@@ -168,14 +168,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
         if (arguments == null)
             return this;
 
-        KeyValuePair<string, object?>[] args = (
-            from arg in arguments
-            let key = arg.Key?.ToString()
-            where !string.IsNullOrWhiteSpace(key)
-            select new KeyValuePair<string, object?>(key, arg.Value)
-        ).ToArray();
-
-        _arguments.AddRange(args);
+        _arguments.AddRange(arguments.ToArray()!);
 
         return this;
     }
@@ -187,9 +180,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
         KeyValuePair<string, object?>[] args = arguments.GetKeyValueArguments().ToArray();
 
-        _arguments.AddRange(args);
-
-        return this;
+        return WithArguments(args);
     }
     #endregion
 
