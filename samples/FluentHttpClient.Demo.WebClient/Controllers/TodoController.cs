@@ -17,9 +17,19 @@ public class TodoController : Controller
         var client = _clientFactory.Get<TodoController>();
         var bearer = await GetAuthToken();
 
+        var args = new Dictionary<string, object>
+        (
+            new[]
+            {
+            new KeyValuePair<string, object>("pageNo", pageNo),
+            new KeyValuePair<string, object>("pageSize", pageSize)
+            }
+        );
+
         var response = await client
           .Endpoint("/api/v1/todos")
-          .WithArguments(new { pageNo = pageNo, pageSize = pageSize })
+          //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
+          .WithArguments(args)
           .WithGeneratedCorelationId()
           .UsingBearerToken(bearer.Token)
           .GetAsync();

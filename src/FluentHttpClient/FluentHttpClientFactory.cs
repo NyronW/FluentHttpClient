@@ -1,4 +1,6 @@
-﻿namespace FluentHttpClient;
+﻿using System.Runtime.CompilerServices;
+
+namespace FluentHttpClient;
 
 internal sealed class HttpClientDescriptor
 {
@@ -44,7 +46,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
 
         if (!ClientDescriptions.ContainsKey(identifier) && !createIfNotFound)
         {
-            throw new ArgumentException($"No client configuration found for identifier:'{nameof(identifier)}'.", nameof(identifier));
+            throw new ArgumentException($"No client configuration found for identifier:'{identifier}'.", nameof(identifier));
         }
 
         var descriptor = ClientDescriptions.ContainsKey(identifier) ?

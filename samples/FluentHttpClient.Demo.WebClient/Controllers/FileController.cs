@@ -13,6 +13,8 @@ public class FileController : Controller
 
     public IActionResult Index()
     {
+        var unregisteredClient = _httpClientFactory.Get("UnRegisteredHttpClient");
+
         return View();
     }
 
