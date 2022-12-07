@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.CompilerServices;
 
 namespace FluentHttpClient;
 
@@ -12,11 +13,14 @@ internal sealed class HttpClientDescriptor
 public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
     IFluentHttpClientBuilder,
     IFluentClientBuilderAction,
+    IHandlerRegistration,
     ISetDefaultHeader,
     IRegisterHttpClient
 {
     internal static IDictionary<string, HttpClientDescriptor> ClientDescriptions = new Dictionary<string, HttpClientDescriptor>();
     internal static FilterCollection DefaultFilters { get; } = new();
+
+    internal Func<HttpMessageHandler> PrimaryMessageHandler { get; private set; } = null!;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IServiceProvider _serviceProvider;
@@ -126,7 +130,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         return this;
     }
 
-    public IRegisterHttpClient WithTimeout(int timeout)
+    public IHandlerRegistration WithTimeout(int timeout)
     {
         if (timeout < 0)
         {
@@ -138,7 +142,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         return this;
     }
 
-    public IRegisterHttpClient WithTimeout(TimeSpan timeout)
+    public IHandlerRegistration WithTimeout(TimeSpan timeout)
     {
         _timeout = timeout;
         return this;
@@ -154,6 +158,18 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
             BaseUrl = _url,
             Headers = _headers
         });
+    }
+
+    public IRegisterHttpClient WithHandler(Func<HttpMessageHandler> configureHandler)
+    {
+        PrimaryMessageHandler = configureHandler;
+        return this;
+    }
+
+    public IRegisterHttpClient WithHandler<THandler>() where THandler : HttpMessageHandler
+    {
+        PrimaryMessageHandler = () => _serviceProvider.GetService<THandler>()!;
+        return this;
     }
     #endregion
 

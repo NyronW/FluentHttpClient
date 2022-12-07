@@ -37,6 +37,12 @@ public static class ServiceCollectionExtensions
         var fc = (FluentHttpClientFactory)client;
         if (!fc.IsRegistered) fc.Register();
 
+        var bldr = services.AddHttpClient(name);
+        if (fc.PrimaryMessageHandler != null)
+        {
+            bldr.ConfigurePrimaryHttpMessageHandler(fc.PrimaryMessageHandler);
+        }
+
         return services;
     }
 }

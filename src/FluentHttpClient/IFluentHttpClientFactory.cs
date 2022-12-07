@@ -14,12 +14,12 @@ public interface IFluentHttpClientBuilder
     IFluentClientBuilderAction CreateClient(Type type);
 }
 
-public interface IFluentClientBuilderAction : ISetDefaultHeader, IRegisterHttpClient
+public interface IFluentClientBuilderAction : ISetDefaultHeader, IHandlerRegistration
 {
     ISetDefaultHeader WithBaseUrl(string url);
 }
 
-public interface ISetDefaultHeader : ISetTimeOut, IRegisterHttpClient
+public interface ISetDefaultHeader : ISetTimeOut, IHandlerRegistration
 {
     ISetDefaultHeader WithHeader(string key, object value);
     ISetDefaultHeader AddFilter<TFilter>();
@@ -32,8 +32,14 @@ public interface ISetTimeOut
     /// </summary>
     /// <param name="timeout">Request duration in seconds</param>
     /// <returns></returns>
-    IRegisterHttpClient WithTimeout(int timeout);
-    IRegisterHttpClient WithTimeout(TimeSpan timeout);
+    IHandlerRegistration WithTimeout(int timeout);
+    IHandlerRegistration WithTimeout(TimeSpan timeout);
+}
+
+public interface IHandlerRegistration: IRegisterHttpClient
+{
+    IRegisterHttpClient WithHandler(Func<HttpMessageHandler> configureHandler);
+    IRegisterHttpClient WithHandler<THandler>() where THandler: HttpMessageHandler;
 }
 
 public interface IRegisterHttpClient
