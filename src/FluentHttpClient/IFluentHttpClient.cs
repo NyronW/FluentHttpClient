@@ -9,6 +9,7 @@ public interface IFluentHttpClient
     MediaTypeFormatterCollection Formatters { get; }
 
     IAssignEndpoint Endpoint(string endpoint);
+    IAssignEndpoint UsingBaseUrl();
 }
 
 public interface ISetHttpHandler : IAssignEndpoint

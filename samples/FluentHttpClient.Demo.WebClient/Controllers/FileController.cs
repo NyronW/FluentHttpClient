@@ -37,7 +37,7 @@ public class FileController : Controller
         var client = _httpClientFactory.Get("file-upload");
 
         var respMsg = await client
-            .Endpoint("/api/v1/files")
+            .UsingBaseUrl()
             .WithHeader("x-request-client-type", "net60-aspnet")
             .WithCorrelationId("R5cCI6IkpXVCJ9.post")
             .UsingBearerToken(bearer.Token)

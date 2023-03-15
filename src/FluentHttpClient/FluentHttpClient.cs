@@ -66,6 +66,22 @@ public sealed class FluentHttpClient : IFluentHttpClient,
         return this;
     }
 
+    public IAssignEndpoint UsingBaseUrl()
+    {
+        _requestToken = false;
+        _arguments.Clear();
+        _contentType = "application/json";
+
+        foreach (var header in _headers)
+            _client.DefaultRequestHeaders.Remove(header.Key);
+
+        _headers.Clear();
+        _files.Clear();
+        _scopes = null!;
+
+        return this;
+    }
+
     public ISendOrCancel SetUserAgent(string userAgent)
     {
         _client.DefaultRequestHeaders.Remove("User-Agent");

@@ -40,7 +40,7 @@ builder.Services.AddFluentHttp("identity-server", builder =>
          .Register();
  }).AddFluentHttp("file-upload", builder =>
  {
-     builder.WithBaseUrl("https://localhost:18963/")
+     builder.WithBaseUrl("https://localhost:18963/api/v1/files")
         .WithTimeout(TimeSpan.FromMinutes(2));
  });
 
