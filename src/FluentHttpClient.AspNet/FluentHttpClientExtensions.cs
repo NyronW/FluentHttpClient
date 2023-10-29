@@ -26,5 +26,10 @@ public static class FluentHttpClientExtensions
     {
         return attachFiles.AttachFile(file.FileName, file.OpenReadStream());
     }
+
+    public static ISendFileActions AttachFiles(this IAttachFiles attach, IFormFile[] files)
+    {
+        return attach.AttachFiles(files);
+    }
 }
 
