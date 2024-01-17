@@ -27,7 +27,7 @@ public class TodoController : Controller
         );
 
         var response = await client
-          .Endpoint("/api/v1/todos")
+          .Endpoint("todos")
           //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
           .WithArguments(args)
           .WithGeneratedCorelationId()
@@ -57,7 +57,7 @@ public class TodoController : Controller
         var cts = new CancellationTokenSource();
 
         var respMsg = await client
-            .Endpoint("/api/v1/todos")
+            .Endpoint("/todos")
             .WithHeader("x-request-client-type", "net60-aspnet")
             .WithCorrelationId("R5cCI6IkpXVCJ9.post")
             .UsingJsonFormat()
