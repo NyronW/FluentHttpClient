@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 
+builder.Services.AddHttpContextAccessor();
 
 var configureHandler = () =>
 {
@@ -42,7 +43,11 @@ builder.Services.AddFluentHttp("identity-server", builder =>
  {
      builder.WithBaseUrl("https://localhost:18963/api/v1/files")
         .WithTimeout(TimeSpan.FromMinutes(2));
- });
+ }).AddFluentHttp("localhost", (sp,builder) =>
+ {
+     builder.ForInternalApis()
+        .WithTimeout(TimeSpan.FromSeconds(10));
+ }).AddFluentHttpAstNetCore();
 
 
 var app = builder.Build();

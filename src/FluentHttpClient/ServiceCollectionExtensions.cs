@@ -12,7 +12,6 @@ public static class ServiceCollectionExtensions
         if (!hasFactory)
             services.AddTransient<IFluentHttpClientFactory, FluentHttpClientFactory>()
                     .AddTransient<IFluentHttpClientBuilder, FluentHttpClientFactory>()
-                    .AddTransient<FluentHttpClient>()
                     .AddTransient<TimerHttpClientFilter>()
                     .AddSingleton<AccessTokenStorage>()
                     .AddHttpClient();
@@ -29,10 +28,34 @@ public static class ServiceCollectionExtensions
 
         var sp = services.BuildServiceProvider();
         var builder = sp.GetRequiredService<IFluentHttpClientBuilder>();
-
         var client = builder.CreateClient(name);
 
         action(client);
+
+        var fc = (FluentHttpClientFactory)client;
+        if (!fc.IsRegistered) fc.Register();
+
+        var bldr = services.AddHttpClient(name);
+        if (fc.PrimaryMessageHandler != null)
+        {
+            bldr.ConfigurePrimaryHttpMessageHandler(fc.PrimaryMessageHandler);
+        }
+
+        return services;
+    }
+
+    public static IServiceCollection AddFluentHttp<TType>(this IServiceCollection services, Action<IServiceProvider, IFluentClientBuilderAction> action)
+            => services.AddFluentHttp(typeof(TType).FullName!, action);
+
+    public static IServiceCollection AddFluentHttp(this IServiceCollection services, string name, Action<IServiceProvider, IFluentClientBuilderAction> action)
+    {
+        services.AddFluentHttp();
+
+        var sp = services.BuildServiceProvider();
+        var builder = sp.GetRequiredService<IFluentHttpClientBuilder>();
+        var client = builder.CreateClient(name);
+
+        action(sp, client);
 
         var fc = (FluentHttpClientFactory)client;
         if (!fc.IsRegistered) fc.Register();

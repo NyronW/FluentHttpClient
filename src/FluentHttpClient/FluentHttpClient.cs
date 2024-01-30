@@ -15,10 +15,11 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 {
     #region Fields & Properties
     private readonly Version version = typeof(FluentHttpClient).GetTypeInfo().Assembly.GetName().Version!;
-
+    private readonly string _identifier;
     private readonly HttpClient _client;
+    private readonly IDictionary<string, object?> _factoryProperties;
     private readonly IServiceProvider _serviceProvider;
-    private Dictionary<string, object> _arguments = new();
+    private Dictionary<string, object?> _arguments = new();
     private Dictionary<string, string> _headers = new();
     private CancellationToken _token;
     private string _contentType = "application/json";
@@ -36,9 +37,11 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     public MediaTypeFormatterCollection Formatters { get; } = new();
     #endregion
 
-    public FluentHttpClient(HttpClient client, IServiceProvider serviceProvider)
+    public FluentHttpClient(string identifier, HttpClient client, IDictionary<string, object?> factoryProperties, IServiceProvider serviceProvider)
     {
+        _identifier = identifier ?? Guid.NewGuid().ToString();
         _client = client;
+        _factoryProperties = factoryProperties;
         _serviceProvider = serviceProvider;
 
         SetDefaultUserAgent();
@@ -181,10 +184,8 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
     public IAssignEndpoint WithArguments(IEnumerable<KeyValuePair<string, object?>>? arguments)
     {
-        if (arguments == null)
-            return this;
-
-        _arguments.AddRange(arguments.ToArray()!);
+        if (arguments != null)
+            _arguments.AddRange(arguments.ToArray()!);
 
         return this;
     }
@@ -234,7 +235,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     }
 
     public ISendFileActions AttachFile(string fullPath) => AttachFiles(new[] { fullPath });
-    
+
     public ISendFileActions AttachFile(string name, Stream stream)
     {
         _files.Add(new(name, stream));
@@ -245,34 +246,57 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
     #region ISendRequest
     public async Task<HttpResponseMessage> GetAsync()
-         => await SendAsync(BuildRequest(_endpoint, HttpMethod.Get));
+         => await SendAsync(_endpoint, HttpMethod.Get);
 
     public async Task<TResponse> GetAsync<TResponse>()
     {
-        using (var response = await GetAsync())
-        {
-            var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
-            return model;
-        }
+        using var response = await GetAsync();
+        var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
+        return model;
     }
 
     public async Task<HttpResponseMessage> DeleteAsync()
-     => await SendAsync(BuildRequest(_endpoint, HttpMethod.Delete));
+     => await SendAsync(_endpoint, HttpMethod.Delete);
 
-    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+    private async Task<HttpResponseMessage> SendAsync<TRequest>(string endpoint, HttpMethod method, TRequest? request)
+    {
+        return await SendAsync(endpoint, method, request);
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(string endpoint, HttpMethod method, object? payload = null)
     {
         BuildFilterInstances();
 
-        if(request.RequestUri == null) 
-            request.RequestUri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
+        var model = new FluentHttpModel(_identifier, _client, _factoryProperties);
+        foreach (IHttpClientFilter filter in _filters)
+            filter.OnBeforeRequest(model);
 
+        var request = BuildRequest(endpoint, method);
+        var req = new FluentHttpRequest(_identifier, _client, request, _factoryProperties);
+
+        foreach (IHttpClientFilter filter in _filters)
+        {
+            filter.OnRequest(req);
+            filter.OnRequest(request);
+        }
+
+        var response = await SendAsync(request);
+
+        foreach (IHttpClientFilter filter in _filters)
+            filter.OnResponse(response);
+
+        return response;
+    }
+
+    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+    {
         var logger = _serviceProvider.GetService<ILogger<FluentHttpClient>>();
         var pair = _headers.SingleOrDefault(h => h.Key.Equals(Headers.CorrelationId, StringComparison.OrdinalIgnoreCase));
 
         using var disposable = logger!.AddContext(nameof(Headers.CorrelationId), pair.Value ?? Guid.NewGuid().ToString());
 
-        foreach (IHttpClientFilter filter in _filters)
-            filter.OnRequest(request);
+        if (request.RequestUri == null)
+            request.RequestUri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
 
         request.Headers.TryAddWithoutValidation("content-type", _contentType);
 
@@ -301,9 +325,6 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
         var response = await _client.SendAsync(request, _token);
 
-        foreach (IHttpClientFilter filter in _filters)
-            filter.OnResponse(response);
-
         return response;
     }
     #endregion
@@ -311,39 +332,33 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     #region ISendRequestWithBody
     public async Task<TResponse> PatchAsync<TRequest, TResponse>(TRequest request)
     {
-        using (var response = await PatchAsync(request))
-        {
-            var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
-            return model;
-        }
+        using var response = await PatchAsync(request);
+        var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
+        return model;
     }
 
     public async Task<HttpResponseMessage> PatchAsync<TRequest>(TRequest request)
-        => await SendAsync(BuildRequest(_endpoint, HttpMethod.Patch, request));
+        => await SendAsync(_endpoint, HttpMethod.Patch, request);
 
     public async Task<TResponse> PutAsync<TRequest, TResponse>(TRequest request)
     {
-        using (var response = await PutAsync(request))
-        {
-            var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
-            return model;
-        }
+        using var response = await PutAsync(request);
+        var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
+        return model;
     }
 
     public async Task<HttpResponseMessage> PutAsync<TRequest>(TRequest request)
-     => await SendAsync(BuildRequest(_endpoint, HttpMethod.Put, request));
+     => await SendAsync(_endpoint, HttpMethod.Put, request);
 
     public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
     {
-        using (var response = await PostAsync(request))
-        {
-            var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
-            return model;
-        }
+        using var response = await PostAsync(request);
+        var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
+        return model;
     }
 
     public async Task<HttpResponseMessage> PostAsync<TRequest>(TRequest request)
-        => await SendAsync(BuildRequest(_endpoint, HttpMethod.Post, request));
+        => await SendAsync(_endpoint, HttpMethod.Post, request);
 
     public async Task<HttpResponseMessage> PostAsync(HttpContent content)
     {
@@ -355,11 +370,9 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     }
     public async Task<TResponse> PostAsync<TResponse>(HttpContent content)
     {
-        using (var response = await PostAsync(content))
-        {
-            var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
-            return model;
-        }
+        using var response = await PostAsync(content);
+        var model = await response.Content.ReadAsAsync<TResponse>(Formatters, _token);
+        return model;
     }
     #endregion
 

@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 
 namespace FluentHttpClient;
 
@@ -18,6 +21,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
     IRegisterHttpClient
 {
     internal static IDictionary<string, HttpClientDescriptor> ClientDescriptions = new Dictionary<string, HttpClientDescriptor>();
+    internal static IDictionary<string, IDictionary<string, object?>> _properties = new Dictionary<string, IDictionary<string, object?>>();
     internal static FilterCollection DefaultFilters { get; } = new();
 
     internal Func<HttpMessageHandler> PrimaryMessageHandler { get; private set; } = null!;
@@ -28,7 +32,6 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
     private string _identifier = null!;
     private string _url = null!;
     private TimeSpan _timeout;
-
 
     public FluentHttpClientFactory(IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider)
     {
@@ -53,8 +56,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
             throw new ArgumentException($"No client configuration found for identifier:'{identifier}'.", nameof(identifier));
         }
 
-        var descriptor = ClientDescriptions.ContainsKey(identifier) ?
-            ClientDescriptions[identifier] : null;
+        var descriptor = ClientDescriptions.TryGetValue(identifier, out HttpClientDescriptor? value) ? value : null;
 
         var http = _httpClientFactory.CreateClient(identifier);
         http.DefaultRequestHeaders.Clear();
@@ -68,7 +70,9 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
                 http.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToString());
         }
 
-        var client = new FluentHttpClient(http, _serviceProvider);
+        var props = _properties.TryGetValue(identifier, out var dict) ? dict : new Dictionary<string, object?>();
+
+        var client = new FluentHttpClient(identifier, http, props, _serviceProvider);
 
         foreach (var filter in DefaultFilters)
             client.Filters.Add(filter);
@@ -148,6 +152,38 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         return this;
     }
 
+    public IRegisterHttpClient WithHandler(Func<HttpMessageHandler> configureHandler)
+    {
+        PrimaryMessageHandler = configureHandler;
+        return this;
+    }
+
+    public IRegisterHttpClient WithHandler<THandler>() where THandler : HttpMessageHandler
+    {
+        PrimaryMessageHandler = () => _serviceProvider.GetService<THandler>()!;
+        return this;
+    }
+
+    public ISetDefaultHeader WithProperty<TValue>(string name, TValue value)
+    {
+        var prop = _properties.TryGetValue(_identifier, out var dict) ? dict : new Dictionary<string, object?>();
+        prop.Add(name, value);
+
+        _properties[_identifier] = prop;
+        return this;
+    }
+
+    public ISetDefaultHeader WithProperties(IEnumerable<KeyValuePair<string, object?>> properties)
+    {
+        if (properties == null) return this;
+
+        var prop = _properties.TryGetValue(_identifier, out var dict) ? dict : new Dictionary<string, object?>();
+        prop.AddRange(properties.ToArray());
+
+        _properties.Add(_identifier, prop);
+        return this;
+    }
+
     public void Register()
     {
         if (IsRegistered) return;
@@ -160,17 +196,6 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         });
     }
 
-    public IRegisterHttpClient WithHandler(Func<HttpMessageHandler> configureHandler)
-    {
-        PrimaryMessageHandler = configureHandler;
-        return this;
-    }
-
-    public IRegisterHttpClient WithHandler<THandler>() where THandler : HttpMessageHandler
-    {
-        PrimaryMessageHandler = () => _serviceProvider.GetService<THandler>()!;
-        return this;
-    }
     #endregion
 
     internal bool IsRegistered => ClientDescriptions.ContainsKey(_identifier);

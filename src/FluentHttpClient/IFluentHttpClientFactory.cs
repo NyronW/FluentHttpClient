@@ -17,6 +17,8 @@ public interface IFluentHttpClientBuilder
 public interface IFluentClientBuilderAction : ISetDefaultHeader, IHandlerRegistration
 {
     ISetDefaultHeader WithBaseUrl(string url);
+    ISetDefaultHeader WithProperty<TValue>(string name, TValue value);
+    ISetDefaultHeader WithProperties(IEnumerable<KeyValuePair<string, object?>> arguments);
 }
 
 public interface ISetDefaultHeader : ISetTimeOut, IHandlerRegistration

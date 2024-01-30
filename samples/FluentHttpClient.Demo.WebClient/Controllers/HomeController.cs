@@ -6,15 +6,23 @@ namespace FluentHttpClient.Demo.WebClient.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly IFluentHttpClientFactory _clientFactory;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(IFluentHttpClientFactory clientFactory)
         {
-            _logger = logger;
+            _clientFactory = clientFactory;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var client = _clientFactory.Get("localhost");
+
+            var resp = await client.Endpoint("/api/values")
+                .WithArgument("foo","bar")
+                .GetAsync();
+
+            var msg = await resp.Content.ReadAsStringAsync();
+
             return View();
         }
 
