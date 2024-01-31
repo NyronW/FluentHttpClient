@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace FluentHttpClient;
 
@@ -11,10 +12,10 @@ public static class ServiceCollectionExtensions
 
         if (!hasFactory)
             services.AddTransient<IFluentHttpClientFactory, FluentHttpClientFactory>()
-                    .AddTransient<IFluentHttpClientBuilder, FluentHttpClientFactory>()
-                    .AddTransient<TimerHttpClientFilter>()
-                    .AddSingleton<AccessTokenStorage>()
-                    .AddHttpClient();
+                .AddTransient<IFluentHttpClientBuilder, FluentHttpClientFactory>()
+                .AddTransient<TimerHttpClientFilter>()
+                .AddSingleton<AccessTokenStorage>()
+                .AddHttpClient();
 
         return services;
     }
@@ -64,6 +65,21 @@ public static class ServiceCollectionExtensions
         if (fc.PrimaryMessageHandler != null)
         {
             bldr.ConfigurePrimaryHttpMessageHandler(fc.PrimaryMessageHandler);
+        }
+
+        return services;
+    }
+
+
+    public static IServiceCollection AddFluentHttpClientFilters(this IServiceCollection services, Assembly[] assemblies)
+    {
+        var filterTypes = assemblies
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => typeof(IHttpClientFilter).IsAssignableFrom(type) && type.IsClass && !type.IsAbstract);
+
+        foreach (var filterType in filterTypes)
+        {
+            services.AddTransient(typeof(IHttpClientFilter), filterType);
         }
 
         return services;

@@ -4,6 +4,7 @@ using System.Text;
 using System.Net.Http.Formatting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace FluentHttpClient;
 
@@ -246,7 +247,10 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
     #region ISendRequest
     public async Task<HttpResponseMessage> GetAsync()
-         => await SendAsync(_endpoint, HttpMethod.Get);
+    {
+        var request = BuildRequest(_endpoint, HttpMethod.Get);
+        return await SendAsync(request);
+    }
 
     public async Task<TResponse> GetAsync<TResponse>()
     {
@@ -256,47 +260,36 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     }
 
     public async Task<HttpResponseMessage> DeleteAsync()
-     => await SendAsync(_endpoint, HttpMethod.Delete);
-
-    private async Task<HttpResponseMessage> SendAsync<TRequest>(string endpoint, HttpMethod method, TRequest? request)
     {
-        return await SendAsync(endpoint, method, request);
+        var request = BuildRequest(_endpoint, HttpMethod.Delete);
+        return await SendAsync(request);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(string endpoint, HttpMethod method, object? payload = null)
+    private async Task<HttpResponseMessage> SendAsync<TRequest>(string endpoint, HttpMethod method, TRequest? payload)
     {
-        BuildFilterInstances();
-
-        var model = new FluentHttpModel(_identifier, _client, _factoryProperties);
-        foreach (IHttpClientFilter filter in _filters)
-            filter.OnBeforeRequest(model);
-
-        var request = BuildRequest(endpoint, method);
-        var req = new FluentHttpRequest(_identifier, _client, request, _factoryProperties);
-
-        foreach (IHttpClientFilter filter in _filters)
-        {
-            filter.OnRequest(req);
-            filter.OnRequest(request);
-        }
-
-        var response = await SendAsync(request);
-
-        foreach (IHttpClientFilter filter in _filters)
-            filter.OnResponse(response);
-
-        return response;
+        var request = BuildRequest(endpoint, method, payload);
+        return await SendAsync(request);
     }
+
 
     public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
     {
         var logger = _serviceProvider.GetService<ILogger<FluentHttpClient>>();
         var pair = _headers.SingleOrDefault(h => h.Key.Equals(Headers.CorrelationId, StringComparison.OrdinalIgnoreCase));
 
+        BuildFilterInstances();
+
         using var disposable = logger!.AddContext(nameof(Headers.CorrelationId), pair.Value ?? Guid.NewGuid().ToString());
 
         if (request.RequestUri == null)
             request.RequestUri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
+
+        var req = new FluentHttpRequest(_identifier, _client, request, _factoryProperties);
+        foreach (IHttpClientFilter filter in _filters)
+        {
+            filter.OnRequest(req);
+            filter.OnRequest(request);
+        }
 
         request.Headers.TryAddWithoutValidation("content-type", _contentType);
 
@@ -324,6 +317,9 @@ public sealed class FluentHttpClient : IFluentHttpClient,
         }
 
         var response = await _client.SendAsync(request, _token);
+
+        foreach (IHttpClientFilter filter in _filters)
+            filter.OnResponse(response);
 
         return response;
     }
@@ -368,6 +364,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
         return await SendAsync(request);
     }
+
     public async Task<TResponse> PostAsync<TResponse>(HttpContent content)
     {
         using var response = await PostAsync(content);
@@ -455,6 +452,12 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
     private HttpRequestMessage BuildRequest<TBody>(string endpoint, HttpMethod method, TBody? body)
     {
+        BuildFilterInstances();
+
+        var model = new FluentHttpModel(_identifier, _client, _factoryProperties);
+        foreach (IHttpClientFilter filter in _filters)
+            filter.OnBeforeRequest(model);
+
         var uri = BuildUrl(_client.BaseAddress!, endpoint).WithArguments(_arguments.ToArray()!);
         var request = new HttpRequestMessage(method, uri);
 
@@ -471,15 +474,16 @@ public sealed class FluentHttpClient : IFluentHttpClient,
 
     private void BuildFilterInstances()
     {
-        if (_filters == null) _filters = new List<IHttpClientFilter>();
+        _filters ??= new List<IHttpClientFilter>();
+
+        if (Filters.Count == 0) return;
+        if (_filters.Count == Filters.Count) return;
 
         foreach (var filter in Filters)
         {
             if (filter == null) continue;
             if (_filters.Any(f => f.GetType() == filter)) continue;
-
-            var instance = _serviceProvider.GetService(filter) as IHttpClientFilter;
-            if (instance == null) continue;
+            if (_serviceProvider.GetService(filter) is not IHttpClientFilter instance) continue;
 
             _filters.Add(instance);
         }
@@ -488,6 +492,8 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     private async Task<AccessToken> GetAccessToken()
     {
         var tokenStorage = _serviceProvider.GetService<AccessTokenStorage>();
+
+        if (tokenStorage is null) return AccessToken.Empty;
 
         var accessToken = await tokenStorage.GetToken(_identityUrl, _clientId, _clientSecret, _scopes);
         return accessToken;

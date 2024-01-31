@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FluentHttpClient;
+namespace FluentHttpClient.AspNet;
 
 public static class FluentHttpClientExtensions
 {
@@ -45,7 +45,7 @@ public static class FluentHttpClientExtensions
 
         return builderAction;
     }
-
+    
     public static IServiceCollection AddFluentHttpAstNetCore(this IServiceCollection services)
     {
         services.AddFluentHttp();

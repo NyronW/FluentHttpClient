@@ -78,4 +78,6 @@ public class AccessToken
     public int ExpiresInSeconds { get; }
     public DateTime Expires { get; }
     public bool Expired => (Expires - DateTime.UtcNow).TotalSeconds <= Threshold.TotalSeconds;
+
+    public static AccessToken Empty => new(string.Empty, 0);
 }

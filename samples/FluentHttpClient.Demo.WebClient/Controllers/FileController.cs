@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using FluentHttpClient.AspNet;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 

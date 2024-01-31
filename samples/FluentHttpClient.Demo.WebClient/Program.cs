@@ -1,4 +1,5 @@
 using FluentHttpClient;
+using FluentHttpClient.AspNet;
 using FluentHttpClient.Demo.WebClient;
 using FluentHttpClient.Demo.WebClient.Controllers;
 
@@ -36,8 +37,8 @@ builder.Services.AddFluentHttp("identity-server", builder =>
      builder.WithBaseUrl("https://localhost:18963/")
          .WithHeader("x-api-version", "1.0.0-beta")
          .AddFilter<TimerHttpClientFilter>()
+         .WithTimeout(10)
          .WithHandler<ByPassCerValidationHandler>()
-         //.WithTimeout(20)
          .Register();
  }).AddFluentHttp("file-upload", builder =>
  {
