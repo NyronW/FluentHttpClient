@@ -1,11 +1,25 @@
 ﻿using FluentHttpClient.Demo.WebClient.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using Polly;
+using Polly.Retry;
+using Polly.Wrap;
+using FluentHttpClient.Resilience.Retry;
+using FluentHttpClient.Resilience.CircuitBreaker;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 
 public class TodoController : Controller
 {
     private readonly IFluentHttpClientFactory _clientFactory;
+
+
+    private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
+            .Handle<HttpRequestException>() // Specify the exceptions on which to retry.
+            .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode) // Optionally, retry on unsuccessful HTTP response codes.
+            .WaitAndRetryAsync(3, retryAttempt =>
+                 TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // Exponential back-off. e.g., 2s, 4s, 8s.
+            );
 
     public TodoController(IFluentHttpClientFactory clientFactory)
     {
@@ -27,19 +41,23 @@ public class TodoController : Controller
         );
 
         var response = await client
-          .Endpoint("todos")
-          //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
-          .WithArguments(args)
-          .WithGeneratedCorelationId()
-          .UsingBearerToken(bearer.Token)
-          .GetAsync();
+            .Endpoint("todos")
+            //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
+            .WithArguments(args)
+            .WithGeneratedCorelationId()
+            .UsingBearerToken(bearer.Token)
+            .GetAsync(retryPolicy, HttpCompletionOption.ResponseHeadersRead);
 
-        var result = await response.GetResultAsync<TodoItem[]>();
+        //todo:implement client side streams
+        response.EnsureSuccessStatusCode();
+
+        var stream = await response.Content.ReadAsStreamAsync();
+        var result = JsonSerializer.DeserializeAsyncEnumerable<TodoItem>(stream);
         var totalItems = response.Headers.GetValue<int>("x-total-items");
 
         if (totalItems.HasValue) ViewData["TotalItems"] = totalItems.Value;
 
-        return View(result.Data);
+        return View(result);
     }
 
     public IActionResult Create()
@@ -96,7 +114,7 @@ public class TodoController : Controller
             .WithCorrelationId("R5cCI6IkpXVCJ9.get")
             .UsingXmlFormat()
             .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
-            .GetAsync();
+            .GetAsync(retryPolicy);
 
         var result = await response.GetResultAsync<TodoItem>();
 
@@ -127,8 +145,23 @@ public class TodoController : Controller
             new("grant_type", "client_credentials")
         });
 
+
+        var policy = Policy
+            .Handle<HttpRequestException>() // Specify the exceptions on which to retry.
+            .OrResult<AccessToken>(a => string.IsNullOrWhiteSpace(a.Token)) // Optionally, retry on unsuccessful HTTP response codes.
+            .WaitAndRetryAsync(3, retryAttempt =>
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // Exponential back-off. e.g., 2s, 4s, 8s.
+            );
+
+
+        var circuitBreakerPolicy = Policy<AccessToken>
+            .HandleResult(a => string.IsNullOrWhiteSpace(a.Token)) // Assuming empty access token indicates a need to break the circuit
+            .CircuitBreakerAsync(2, TimeSpan.FromMinutes(1));
+
+        var policyWrap = policy.WrapAsync(circuitBreakerPolicy);
+
         var authToken = await _clientFactory.Get("identity-server").Endpoint("https://localhost:7094/connect/token")
-            .PostAsync<AccessToken>(content);
+                .PostAsync(content, circuitBreakerPolicy);
 
         return authToken;
     }

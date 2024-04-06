@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using MinimalEndpoints;
+using MinimalEndpoints.Extensions.Http;
 using System.Linq;
 
 namespace FluentHttpClient.Demo.Api.Features.Todo
@@ -30,15 +32,14 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
         /// <returns>Returns all available todo items</returns>
         /// <response code="200">Returns all available items</response>
         /// <response code="500">Internal server error occured</response>
-        public async Task<IEnumerable<TodoItem>> SendAsync(HttpResponse response, int pageNo = 1, int pageSize = 10)
+        [HandlerMethod]
+        public IResult SendAsync(HttpRequest request, int pageNo = 1, int pageSize = 10)
         {
-            var items = await _repository.GetAllAsync();
+            var count = _repository.GetCount();
+            var items = _repository.GetAllAsyncStream(pageNo, pageSize);
+            request.HttpContext.Response.Headers["x-total-items"] = count.ToString();
 
-            response.Headers.Add("x-total-items", items.Count().ToString());
-
-            items = items.Skip((pageNo - 1) * pageSize).Take(pageSize);
-
-            return items;
+            return new StreamResult<TodoItem>(items);
         }
     }
 }

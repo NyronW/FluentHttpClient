@@ -4,11 +4,10 @@ using System.Text;
 using System.Net.Http.Formatting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Net;
 
 namespace FluentHttpClient;
 
-public sealed class FluentHttpClient : IFluentHttpClient,
+public class FluentHttpClient : IFluentHttpClient,
     IAssignEndpoint,
     ISendOrCancel,
     ISendActions,
@@ -32,7 +31,6 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     private string[] _scopes = null!;
     private bool _requestToken = false;
     private List<KeyValuePair<string, Stream>> _files = new();
-
     public FilterCollection Filters { get; } = new();
 
     public MediaTypeFormatterCollection Formatters { get; } = new();
@@ -46,6 +44,16 @@ public sealed class FluentHttpClient : IFluentHttpClient,
         _serviceProvider = serviceProvider;
 
         SetDefaultUserAgent();
+    }
+
+    public  string GetBaseUrl()
+    {
+        return _client.BaseAddress?.AbsoluteUri ?? string.Empty;
+    }
+
+    public bool HasHeader(string name)
+    {
+        return _headers.ContainsKey(name);
     }
 
     public IAssignEndpoint Endpoint(string endpoint)
@@ -246,7 +254,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     #endregion
 
     #region ISendRequest
-    public async Task<HttpResponseMessage> GetAsync()
+    public async Task<HttpResponseMessage> GetAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
         var request = BuildRequest(_endpoint, HttpMethod.Get);
         return await SendAsync(request);
@@ -259,7 +267,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
         return model;
     }
 
-    public async Task<HttpResponseMessage> DeleteAsync()
+    public async Task<HttpResponseMessage> DeleteAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
         var request = BuildRequest(_endpoint, HttpMethod.Delete);
         return await SendAsync(request);
@@ -272,7 +280,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
     }
 
 
-    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
         var logger = _serviceProvider.GetService<ILogger<FluentHttpClient>>();
         var pair = _headers.SingleOrDefault(h => h.Key.Equals(Headers.CorrelationId, StringComparison.OrdinalIgnoreCase));
@@ -316,7 +324,7 @@ public sealed class FluentHttpClient : IFluentHttpClient,
             request.Content = content;
         }
 
-        var response = await _client.SendAsync(request, _token);
+        var response = await _client.SendAsync(request, httpCompletionOption, _token);
 
         foreach (IHttpClientFilter filter in _filters)
             filter.OnResponse(response);

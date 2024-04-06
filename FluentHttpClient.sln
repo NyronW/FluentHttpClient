@@ -5,17 +5,19 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient", "src\FluentHttpClient\FluentHttpClient.csproj", "{75F9F27B-D7F8-4E4C-8401-5288415A15CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.AspNet", "src\FluentHttpClient.AspNet\FluentHttpClient.AspNet.csproj", "{35316BB7-A2DD-49AE-8F97-7E9DE13D09AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.AspNet", "src\FluentHttpClient.AspNet\FluentHttpClient.AspNet.csproj", "{35316BB7-A2DD-49AE-8F97-7E9DE13D09AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.Demo.Api", "samples\FluentHttpClient.Demo.Api\FluentHttpClient.Demo.Api.csproj", "{4794A5EF-8BA0-41DD-97F1-74D1B562F980}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.Api", "samples\FluentHttpClient.Demo.Api\FluentHttpClient.Demo.Api.csproj", "{4794A5EF-8BA0-41DD-97F1-74D1B562F980}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.Demo.WebClient", "samples\FluentHttpClient.Demo.WebClient\FluentHttpClient.Demo.WebClient.csproj", "{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.WebClient", "samples\FluentHttpClient.Demo.WebClient\FluentHttpClient.Demo.WebClient.csproj", "{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{51615B32-B88B-4D3A-92C0-C26C61A4022A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{6F087171-0D11-445A-88E7-7775A491542F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.Demo.IdentityServer", "samples\FluentHttpClient.Demo.IdentityServer\FluentHttpClient.Demo.IdentityServer.csproj", "{79CEA289-1567-49E8-836D-F5E6C1025D4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.IdentityServer", "samples\FluentHttpClient.Demo.IdentityServer\FluentHttpClient.Demo.IdentityServer.csproj", "{79CEA289-1567-49E8-836D-F5E6C1025D4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.Resilience", "src\FluentHttpClient.Resilience\FluentHttpClient.Resilience.csproj", "{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +45,10 @@ Global
 		{79CEA289-1567-49E8-836D-F5E6C1025D4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79CEA289-1567-49E8-836D-F5E6C1025D4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79CEA289-1567-49E8-836D-F5E6C1025D4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,6 +59,7 @@ Global
 		{4794A5EF-8BA0-41DD-97F1-74D1B562F980} = {6F087171-0D11-445A-88E7-7775A491542F}
 		{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B} = {6F087171-0D11-445A-88E7-7775A491542F}
 		{79CEA289-1567-49E8-836D-F5E6C1025D4C} = {6F087171-0D11-445A-88E7-7775A491542F}
+		{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E} = {51615B32-B88B-4D3A-92C0-C26C61A4022A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C53488C1-B36C-482F-BFD6-334B7BC10F6F}

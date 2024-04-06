@@ -1,4 +1,4 @@
-﻿@model FluentHttpClient.Demo.WebClient.Models.TodoItem[]
+﻿@model IAsyncEnumerable<FluentHttpClient.Demo.WebClient.Models.TodoItem>
 @{
     var cPageNo = Context.Request.Query["pageno"];
     var pageNo = string.IsNullOrEmpty(cPageNo) ? 1 : Convert.ToInt32(cPageNo);
@@ -33,16 +33,18 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Id</td>
-                <td>@item.Title</td>
-                <td>@item.Completed</td>
-                <td>
-                    <a asp-action="details" asp-route-id="@item.Id">View</a>
-                </td>
-            </tr>
+        @{
+            await foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Title</td>
+                    <td>@item.Completed</td>
+                    <td>
+                        <a asp-action="details" asp-route-id="@item.Id">View</a>
+                    </td>
+                </tr>
+            }
         }
     </tbody>
 </table>

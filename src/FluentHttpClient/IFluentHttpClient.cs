@@ -10,6 +10,9 @@ public interface IFluentHttpClient
 
     IAssignEndpoint Endpoint(string endpoint);
     IAssignEndpoint UsingBaseUrl();
+
+    string GetBaseUrl();
+    bool HasHeader(string name);
 }
 
 public interface ISetHttpHandler : IAssignEndpoint
@@ -86,9 +89,9 @@ public interface ISendFileActions : IAssignCancellationToken, ISendRequestWithBo
 
 public interface ISendRequest
 {
-    Task<HttpResponseMessage> SendAsync(HttpRequestMessage request);
-    Task<HttpResponseMessage> DeleteAsync();
-    Task<HttpResponseMessage> GetAsync();
+    Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
+    Task<HttpResponseMessage> DeleteAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
+    Task<HttpResponseMessage> GetAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
     Task<TResponse> GetAsync<TResponse>();
 }
 

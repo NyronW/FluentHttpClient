@@ -1,4 +1,5 @@
 ﻿using Bogus;
+using Newtonsoft.Json.Linq;
 
 namespace FluentHttpClient.Demo.Api.Features.Todo
 {
@@ -6,6 +7,8 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
     {
         Task<string> CreateAsync(TodoItemDto model);
         Task<IEnumerable<TodoItem>> GetAllAsync();
+        IAsyncEnumerable<TodoItem> GetAllAsyncStream(int pageNumber, int pageSize);
+        int GetCount();
         Task<TodoItem> GetById(string id);
     }
 
@@ -14,7 +17,7 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
     /// </summary>
     public class TodoRepository : ITodoRepository
     {
-        private readonly Dictionary<string, TodoItem> items = new();
+        private readonly Dictionary<string, TodoItem> items = [];
         private readonly Faker _faker = new();
 
         /// <summary>
@@ -63,6 +66,38 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
         }
 
         /// <summary>
+        /// Streams all todo items
+        /// </summary>
+        /// <returns></returns>
+        public async IAsyncEnumerable<TodoItem> GetAllAsyncStream(int pageNumber, int pageSize)
+        {
+            var values = items.Select(i => i.Value);
+            int skipped = 0;
+            int taken = 0;
+            int skip = (pageNumber - 1) * pageSize;
+
+            foreach (var item in values)
+            {
+                if (skipped < skip)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                if (taken < pageSize)
+                {
+                    await Task.Delay(500);//simulate slow IO operation
+                    yield return item;
+                    taken++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
         /// Get single todo item for specified ID
         /// </summary>
         /// <param name="id"></param>
@@ -75,5 +110,11 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
 
             return Task.FromResult(item);
         }
+
+        /// <summary>
+        /// get count of items
+        /// </summary>
+        /// <returns></returns>
+        public int GetCount() => items.Count;
     }
 }

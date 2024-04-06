@@ -28,7 +28,8 @@ public class GetTodoById : IEndpoint
     /// </summary>
     /// <returns>Returns item by its identifier</returns>
     /// <response code="200">Returns single todo item</response>
-    /// <response code="500">Internal server error occured</response>
+    /// <response code="500">Internal server error occured</response>\
+    [HandlerMethod]
     public async Task<IResult> SendAsync(string id)
     {
         var item = await _repository.GetById(id);
