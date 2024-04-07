@@ -1,7 +1,7 @@
 ﻿using Polly.Retry;
 
-namespace FluentHttpClient.Resilience.Retry;
-public static class ISendRequestWithBodyExtensions
+namespace FluentHttpClient.Resilience;
+public static class ISendRequestWithBodyRetryExtensions
 {
     public static async Task<HttpResponseMessage> PatchAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncRetryPolicy policy)
     {

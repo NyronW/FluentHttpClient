@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Bogus" Version="35.5.0" />
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="3.0.1" />
-    <PackageReference Include="MinimalEndpoints" Version="1.1.0" />
+    <PackageReference Include="MinimalEndpoints" Version="1.2.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 

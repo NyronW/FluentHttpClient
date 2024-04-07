@@ -1,9 +1,9 @@
-﻿using Polly.CircuitBreaker;
+﻿using Polly.Wrap;
 
 namespace FluentHttpClient.Resilience;
-public static class ISendRequestWithBodyCircuitBreakerExtensions
+public static class ISendRequestWithBodyWrapExtensions
 {
-    public static async Task<HttpResponseMessage> PatchAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncCircuitBreakerPolicy policy)
+    public static async Task<HttpResponseMessage> PatchAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncPolicyWrap policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PatchAsync(request));
@@ -11,7 +11,7 @@ public static class ISendRequestWithBodyCircuitBreakerExtensions
             return await client.PatchAsync(request);
     }
 
-    public static async Task<HttpResponseMessage> PutAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncCircuitBreakerPolicy policy)
+    public static async Task<HttpResponseMessage> PutAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncPolicyWrap policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PutAsync(request));
@@ -19,7 +19,7 @@ public static class ISendRequestWithBodyCircuitBreakerExtensions
             return await client.PutAsync(request);
     }
 
-    public static async Task<HttpResponseMessage> PostAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncCircuitBreakerPolicy policy)
+    public static async Task<HttpResponseMessage> PostAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncPolicyWrap policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PostAsync(request));
@@ -27,7 +27,7 @@ public static class ISendRequestWithBodyCircuitBreakerExtensions
             return await client.PostAsync(request);
     }
 
-    public static async Task<HttpResponseMessage> PostAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncCircuitBreakerPolicy<HttpResponseMessage> policy)
+    public static async Task<HttpResponseMessage> PostAsync<TRequest>(this ISendRequestWithBody client, TRequest request, AsyncPolicyWrap<HttpResponseMessage> policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PostAsync(request));
@@ -35,7 +35,7 @@ public static class ISendRequestWithBodyCircuitBreakerExtensions
             return await client.PostAsync(request);
     }
 
-    public static async Task<HttpResponseMessage> PostAsync(this ISendRequestWithBody client, HttpContent content, AsyncCircuitBreakerPolicy policy)
+    public static async Task<HttpResponseMessage> PostAsync(this ISendRequestWithBody client, HttpContent content, AsyncPolicyWrap policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PostAsync(content));
@@ -43,7 +43,7 @@ public static class ISendRequestWithBodyCircuitBreakerExtensions
             return await client.PostAsync(content);
     }
 
-    public static async Task<HttpResponseMessage> PostAsync(this ISendRequestWithBody client, HttpContent content, AsyncCircuitBreakerPolicy<HttpResponseMessage> policy)
+    public static async Task<HttpResponseMessage> PostAsync(this ISendRequestWithBody client, HttpContent content, AsyncPolicyWrap<HttpResponseMessage> policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PostAsync(content));
@@ -51,7 +51,7 @@ public static class ISendRequestWithBodyCircuitBreakerExtensions
             return await client.PostAsync(content);
     }
 
-    public static async Task<TResponse> PostAsync<TResponse>(this ISendRequestWithBody client, HttpContent content, AsyncCircuitBreakerPolicy<TResponse> policy)
+    public static async Task<TResponse> PostAsync<TResponse>(this ISendRequestWithBody client, HttpContent content, AsyncPolicyWrap<TResponse> policy)
     {
         if (policy != null)
             return await policy.ExecuteAsync(() => client.PostAsync<TResponse>(content));

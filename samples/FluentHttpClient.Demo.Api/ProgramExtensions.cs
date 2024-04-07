@@ -37,9 +37,9 @@ namespace FluentHttpClient.Demo.Api
 
                 c.OperationFilter<SecureSwaggerEndpointRequirementFilter>();
 
-            // Set the comments path for the Swagger JSON and UI.
-            var xmlFiles = Directory.GetFiles(AppContext.BaseDirectory)
-                    .Where(f => Path.GetExtension(f) == ".xml");
+                // Set the comments path for the Swagger JSON and UI.
+                var xmlFiles = Directory.GetFiles(AppContext.BaseDirectory)
+                        .Where(f => Path.GetExtension(f) == ".xml");
 
                 foreach (var xmlFile in xmlFiles)
                 {
@@ -63,8 +63,8 @@ namespace FluentHttpClient.Demo.Api
                 .AddIdentityServerAuthentication(options =>
                 {
                     options.RequireHttpsMetadata = false;         //False for local addresses, true ofcourse for live scenarios
-                                options.Authority = "https://localhost:7094/";//IdentityServer URL
-                                options.ApiName = "api1";
+                    options.Authority = "https://localhost:7094/";//IdentityServer URL
+                    options.ApiName = "api1";
                     options.ApiSecret = "ScopeSecret";
                 });
 

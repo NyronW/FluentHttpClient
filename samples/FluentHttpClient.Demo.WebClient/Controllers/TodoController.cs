@@ -4,15 +4,13 @@ using System.Text.Json;
 using Polly;
 using Polly.Retry;
 using Polly.Wrap;
-using FluentHttpClient.Resilience.Retry;
-using FluentHttpClient.Resilience.CircuitBreaker;
+using FluentHttpClient.Resilience;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 
 public class TodoController : Controller
 {
     private readonly IFluentHttpClientFactory _clientFactory;
-
 
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
             .Handle<HttpRequestException>() // Specify the exceptions on which to retry.
@@ -33,31 +31,43 @@ public class TodoController : Controller
 
         var args = new Dictionary<string, object>
         (
-            new[]
-            {
-            new KeyValuePair<string, object>("pageNo", pageNo),
-            new KeyValuePair<string, object>("pageSize", pageSize)
-            }
+            [
+                new KeyValuePair<string, object>("pageNo", pageNo),
+                new KeyValuePair<string, object>("pageSize", pageSize)
+            ]
         );
 
-        var response = await client
+        using var response = await client
             .Endpoint("todos")
             //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
             .WithArguments(args)
             .WithGeneratedCorelationId()
             .UsingBearerToken(bearer.Token)
-            .GetAsync(retryPolicy, HttpCompletionOption.ResponseHeadersRead);
+            .GetAsync(HttpCompletionOption.ResponseHeadersRead);
 
         //todo:implement client side streams
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();
-        var result = JsonSerializer.DeserializeAsyncEnumerable<TodoItem>(stream);
+
+        var options = new JsonSerializerOptions
+        {
+            DefaultBufferSize = 10, // Adjust as necessary
+            PropertyNameCaseInsensitive = true // If your JSON properties are not case-sensitive
+        };
+        
+        var data = new List<TodoItem>();
+
+        await foreach (var item in JsonSerializer.DeserializeAsyncEnumerable<TodoItem>(stream, options))
+        {
+            data.Add(item);
+        }
+
         var totalItems = response.Headers.GetValue<int>("x-total-items");
 
         if (totalItems.HasValue) ViewData["TotalItems"] = totalItems.Value;
 
-        return View(result);
+        return View(data);
     }
 
     public IActionResult Create()
@@ -158,10 +168,24 @@ public class TodoController : Controller
             .HandleResult(a => string.IsNullOrWhiteSpace(a.Token)) // Assuming empty access token indicates a need to break the circuit
             .CircuitBreakerAsync(2, TimeSpan.FromMinutes(1));
 
+        var timeoutPolicy = Policy
+             .TimeoutAsync<AccessToken>(TimeSpan.FromSeconds(10));
+
+        var fallbackPolicy = Policy<AccessToken>
+            .Handle<HttpRequestException>()
+            .FallbackAsync(fallbackValue: new AccessToken("", 00)!);
+
+        var bulkheadPolicy = Policy
+            .BulkheadAsync<AccessToken>(maxParallelization: 3, maxQueuingActions: 6);
+
         var policyWrap = policy.WrapAsync(circuitBreakerPolicy);
 
+
+        var noOpPolicy = Policy.NoOpAsync<AccessToken>();
+
+
         var authToken = await _clientFactory.Get("identity-server").Endpoint("https://localhost:7094/connect/token")
-                .PostAsync(content, circuitBreakerPolicy);
+                .PostAsync(content, noOpPolicy);
 
         return authToken;
     }

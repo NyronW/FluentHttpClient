@@ -257,7 +257,7 @@ public class FluentHttpClient : IFluentHttpClient,
     public async Task<HttpResponseMessage> GetAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
         var request = BuildRequest(_endpoint, HttpMethod.Get);
-        return await SendAsync(request);
+        return await SendAsync(request, httpCompletionOption);
     }
 
     public async Task<TResponse> GetAsync<TResponse>()
@@ -267,10 +267,17 @@ public class FluentHttpClient : IFluentHttpClient,
         return model;
     }
 
+    public async Task<Stream> GetStreamAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
+    {
+        var url = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
+
+        return await _client.GetStreamAsync(url);
+    }
+
     public async Task<HttpResponseMessage> DeleteAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
         var request = BuildRequest(_endpoint, HttpMethod.Delete);
-        return await SendAsync(request);
+        return await SendAsync(request, httpCompletionOption);
     }
 
     private async Task<HttpResponseMessage> SendAsync<TRequest>(string endpoint, HttpMethod method, TRequest? payload)

@@ -4,6 +4,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>0.0.1</Version>
+    <PackageId>YAFLHttp.Resilience</PackageId>
+    <Authors>Nyron Williams</Authors>
+    <Product>YAFLHttp.Resilience</Product>
+    <Description>Fluent API for working with HttpClient in AspNet core</Description>
+    <RepositoryUrl>https://github.com/NyronW/YAFLHttp</RepositoryUrl>   
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,13 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FluentHttpClient\FluentHttpClient.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Bulkhead\" />
-    <Folder Include="Fallback\" />
-    <Folder Include="Wrap\" />
-    <Folder Include="Timeout\" />
   </ItemGroup>
 
 </Project>

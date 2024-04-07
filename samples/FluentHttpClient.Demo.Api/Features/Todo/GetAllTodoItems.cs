@@ -10,7 +10,7 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<TodoItem>))]
     [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
     [Endpoint(TagName = "Todo", OperationId = nameof(GetAllTodoItems))]
-    [Authorize]
+    //[Authorize]
     public class GetAllTodoItems : IEndpoint
     {
         private readonly ITodoRepository _repository;
@@ -33,13 +33,16 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
         /// <response code="200">Returns all available items</response>
         /// <response code="500">Internal server error occured</response>
         [HandlerMethod]
-        public IResult SendAsync(HttpRequest request, int pageNo = 1, int pageSize = 10)
+        public async IAsyncEnumerable<TodoItem> SendAsync(HttpRequest request, int pageNo = 1, int pageSize = 10)
         {
             var count = _repository.GetCount();
             var items = _repository.GetAllAsyncStream(pageNo, pageSize);
             request.HttpContext.Response.Headers["x-total-items"] = count.ToString();
 
-            return new StreamResult<TodoItem>(items);
+            await foreach (var item in items)
+            {
+                yield return item;
+            }
         }
     }
 }

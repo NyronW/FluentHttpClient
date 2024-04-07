@@ -93,6 +93,7 @@ public interface ISendRequest
     Task<HttpResponseMessage> DeleteAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
     Task<HttpResponseMessage> GetAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
     Task<TResponse> GetAsync<TResponse>();
+    Task<Stream> GetStreamAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
 }
 
 public interface ISendRequestWithBody

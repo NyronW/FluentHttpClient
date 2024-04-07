@@ -86,8 +86,8 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
 
                 if (taken < pageSize)
                 {
-                    await Task.Delay(500);//simulate slow IO operation
                     yield return item;
+                    await Task.Delay(500);//simulate slow IO operation
                     taken++;
                 }
                 else

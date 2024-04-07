@@ -1,8 +1,8 @@
 ﻿using Polly.CircuitBreaker;
 
-namespace FluentHttpClient.Resilience.CircuitBreaker;
+namespace FluentHttpClient.Resilience;
 
-public static class ISendRequestExtensions
+public static class ISendRequestCircuitBreakerExtensions
 {
     public static async Task<HttpResponseMessage> DeleteAsync(this ISendRequest client, AsyncCircuitBreakerPolicy policy, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
