@@ -34,7 +34,7 @@ builder.Services.AddFluentHttp("identity-server", builder =>
     .WithHandler(configureHandler);
 }).AddFluentHttp<TodoController>(builder =>
  {
-     builder.WithBaseUrl("https://localhost:18963/api/v1")
+     builder.WithBaseUrl("https://localhost:18963/api/v2")
          .WithHeader("x-api-version", "1.0.0-beta")
          .AddFilter<TimerHttpClientFilter>()
          .WithTimeout(10)
