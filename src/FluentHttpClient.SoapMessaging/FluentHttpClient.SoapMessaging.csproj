@@ -6,16 +6,12 @@
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>0.0.1</Version>
-    <PackageId>YAFLHttp.Resilience</PackageId>
+    <PackageId>YAFLHttp.SoapMessaging</PackageId>
     <Authors>Nyron Williams</Authors>
-    <Product>YAFLHttp.Resilience</Product>
-    <Description>Http Resiliency for YAFLHttp (Fluent API for working with HttpClient in AspNet core)</Description>
-    <RepositoryUrl>https://github.com/NyronW/YAFLHttp</RepositoryUrl>   
+    <Product>YAFLHttp.SoapMessaging</Product>
+    <Description>SOAP Messaging support for YAFLHttp (Fluent API for working with HttpClient in AspNet core)</Description>
+    <RepositoryUrl>https://github.com/NyronW/YAFLHttp</RepositoryUrl>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Polly" Version="8.3.1" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FluentHttpClient\FluentHttpClient.csproj" />

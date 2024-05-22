@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FluentHttpClient.AspNet\FluentHttpClient.AspNet.csproj" />
     <ProjectReference Include="..\..\src\FluentHttpClient.Resilience\FluentHttpClient.Resilience.csproj" />
+    <ProjectReference Include="..\..\src\FluentHttpClient.SoapMessaging\FluentHttpClient.SoapMessaging.csproj" />
     <ProjectReference Include="..\..\src\FluentHttpClient\FluentHttpClient.csproj" />
   </ItemGroup>
 

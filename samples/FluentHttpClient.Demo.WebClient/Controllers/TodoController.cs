@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using Polly;
 using Polly.Retry;
-using Polly.Wrap;
 using FluentHttpClient.Resilience;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
@@ -43,7 +42,7 @@ public class TodoController : Controller
             .WithArguments(args)
             .WithGeneratedCorelationId()
             .UsingBearerToken(bearer.Token)
-            .GetAsync(HttpCompletionOption.ResponseHeadersRead);
+            .GetAsync();
 
         //todo:implement client side streams
         response.EnsureSuccessStatusCode();

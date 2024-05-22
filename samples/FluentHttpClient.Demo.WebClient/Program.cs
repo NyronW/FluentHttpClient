@@ -29,26 +29,35 @@ var configureHandler = () =>
 builder.Services.AddTransient<ByPassCerValidationHandler>();
 
 builder.Services.AddFluentHttp("identity-server", builder =>
-{
-    builder.WithTimeout(10)
-    .WithHandler(configureHandler);
-}).AddFluentHttp<TodoController>(builder =>
- {
-     builder.WithBaseUrl("https://localhost:18963/api/v2")
-         .WithHeader("x-api-version", "1.0.0-beta")
-         .AddFilter<TimerHttpClientFilter>()
-         .WithTimeout(10)
-         .WithHandler<ByPassCerValidationHandler>()
-         .Register();
- }).AddFluentHttp("file-upload", builder =>
- {
-     builder.WithBaseUrl("https://localhost:18963/api/v1/files")
-        .WithTimeout(TimeSpan.FromMinutes(2));
- }).AddFluentHttp("localhost", (sp,builder) =>
- {
-     builder.ForInternalApis()
-        .WithTimeout(TimeSpan.FromSeconds(10));
- }).AddFluentHttpAstNetCore();
+    {
+        builder.WithTimeout(10)
+        .WithHandler(configureHandler);
+    })
+    .AddFluentHttp<TodoController>(builder =>
+     {
+         builder.WithBaseUrl("https://localhost:18963/api/v2")
+             .WithHeader("x-api-version", "1.0.0-beta")
+             .AddFilter<TimerHttpClientFilter>()
+             .WithTimeout(10)
+             .WithHandler<ByPassCerValidationHandler>()
+             .Register();
+     })
+    .AddFluentHttp("file-upload", builder =>
+     {
+         builder.WithBaseUrl("https://localhost:18963/api/v1/files")
+            .WithTimeout(TimeSpan.FromMinutes(2));
+     })
+    .AddFluentHttp("soap", builder =>
+    {
+        builder.WithBaseUrl("http://www.dneonline.com/calculator.asmx")
+           .WithTimeout(TimeSpan.FromMinutes(2));
+    })
+    .AddFluentHttp("localhost", (sp, builder) =>
+     {
+         builder.ForInternalApis()
+            .WithTimeout(TimeSpan.FromSeconds(10));
+     })
+    .AddFluentHttpAstNetCore();
 
 
 var app = builder.Build();
