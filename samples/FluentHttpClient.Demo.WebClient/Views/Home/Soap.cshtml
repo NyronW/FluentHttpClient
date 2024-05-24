@@ -1,6 +1,15 @@
-﻿@{
+﻿@model FluentHttpClient.Demo.WebClient.Models.SoapViewModel
+
+@{
     ViewData["Title"] = "Soap Messaging";
 }
 <h1>@ViewData["Title"]</h1>
 
 <p>Soap messaging extension.</p>
+<p>Soap Endpoint: @Model.SoapServiceUrl</p>
+<p>Request.IntA: @Model.intA</p>
+<p>Request.IntB: @Model.intB</p>
+<p>Addition: @Model.AdditionResult.</p>
+<p>Multiplication: @Model.MultiplicationResult.</p>
+
+

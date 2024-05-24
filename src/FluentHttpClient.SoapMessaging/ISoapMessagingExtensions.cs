@@ -1,13 +1,23 @@
 ﻿using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
+using System.Collections.Concurrent;
 using System.Reflection;
 
 namespace FluentHttpClient.SoapMessaging;
 
 public static class ISoapMessagingExtensions
 {
-    public static async Task<HttpResponseMessage> SoapPostAsync<TRequest>(this ISendRequestWithBody client, TRequest request, string methodName, string customNamespace)
+    private static readonly ConcurrentDictionary<Type, XmlSerializer> serializers = new ConcurrentDictionary<Type, XmlSerializer>();
+
+    private static XmlSerializer GetOrCreateSerializer(Type type)
+    {
+        return serializers.GetOrAdd(type, t => new XmlSerializer(t));
+    }
+
+
+    public static async Task<HttpResponseMessage> SoapPostAsync<TRequest>(this ISendRequestWithBody client, TRequest request,
+        string methodName = "", string customNamespace = "")
     {
         HttpContent content = BuildSoapContent(request, methodName, customNamespace);
 
@@ -15,13 +25,13 @@ public static class ISoapMessagingExtensions
             .PostAsync(content);
     }
 
-    public static async Task<TResponse> SoapPostAsync<TRequest, TResponse>(this ISendRequestWithBody client, TRequest request, string methodName,
-        string customNamespace, string responseElementName = "") where TResponse : class, ISoapBody
+    public static async Task<TResponse> SoapPostAsync<TRequest, TResponse>(this ISendRequestWithBody client, TRequest request, string methodName = "",
+        string customNamespace = "") where TResponse : class, ISoapBody
     {
         var response = await client.SoapPostAsync(request, methodName, customNamespace);
         string result = await response.Content.ReadAsStringAsync();
 
-        var responseObject = DeserializeSoapResponse<TResponse>(result, responseElementName, customNamespace);
+        var responseObject = DeserializeSoapResponse<TResponse>(result);
 
         return responseObject;
     }
@@ -29,105 +39,114 @@ public static class ISoapMessagingExtensions
 
     private static StringContent BuildSoapContent<TRequest>(TRequest request, string methodName, string customNamespace)
     {
-        var dynamicRequest = new DynamicSoapRequest(customNamespace);
-        // Use reflection to add all public properties from the TRequest object to the dynamicRequest object
-        foreach (var property in typeof(TRequest).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        // Create a new XML document and writer
+        using var stringWriter = new StringWriter();
+        using var xmlWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings { OmitXmlDeclaration = true });
+        // Start writing the SOAP envelope
+        xmlWriter.WriteStartElement("soap", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
+        xmlWriter.WriteStartElement("soap", "Body", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        // Start writing the method element
+        if (!string.IsNullOrWhiteSpace(methodName) && !string.IsNullOrEmpty(customNamespace))
+            xmlWriter.WriteStartElement(methodName, customNamespace);
+
+        // Check if the type has the XmlRoot attribute
+        var xmlRootAttr = request.GetType().GetCustomAttribute<XmlRootAttribute>();
+        if (xmlRootAttr != null)
         {
-            var value = property.GetValue(request);
-            dynamicRequest.AddParameter(property.Name, value!);
+            // Use XmlSerializer to serialize the body content
+            var bodySerializer = GetOrCreateSerializer(typeof(TRequest));
+            bodySerializer.Serialize(xmlWriter, request, new XmlSerializerNamespaces(new[] { XmlQualifiedName.Empty }));
+        }
+        else
+        {
+            // Use custom serialization for properties
+            SerializeProperties(xmlWriter, request);
         }
 
-        var soapEnvelope = new SoapEnvelope<DynamicSoapRequest>(customNamespace)
+        // Close the method, body, and envelope elements
+        if (!string.IsNullOrWhiteSpace(methodName) && !string.IsNullOrEmpty(customNamespace))
+            xmlWriter.WriteEndElement(); // method element
+        else if (xmlRootAttr != null)
         {
-            Body = new SoapBody<DynamicSoapRequest>(customNamespace)
-            {
-                Request = dynamicRequest,
-            }
-        };
-
-        var xmlSerializer = new XmlSerializer(typeof(SoapEnvelope<DynamicSoapRequest>));
-        var settings = new XmlWriterSettings { Encoding = new UTF8Encoding(false), Indent = true };
-
-        string xmlRequest;
-        using (var stream = new MemoryStream())
-        using (var writer = XmlWriter.Create(stream, settings))
-        {
-            xmlSerializer.Serialize(writer, soapEnvelope);
-            xmlRequest = Encoding.UTF8.GetString(stream.ToArray());
+            customNamespace = xmlRootAttr.Namespace!;
+            methodName = xmlRootAttr.ElementName;
         }
 
-        // Manually modify the serialized XML to insert the correct method name
-        xmlRequest = xmlRequest.Replace($"<dynamic xmlns=\"yafl.soap\">", $"<{methodName} xmlns=\"{customNamespace}\">")
-                               .Replace("</dynamic>", $"</{methodName}>");
+        xmlWriter.WriteEndElement(); // body element
+        xmlWriter.WriteEndElement(); // envelope element
+        xmlWriter.Flush();
 
-        var content = new StringContent(xmlRequest, Encoding.UTF8, "text/xml");
+        if (string.IsNullOrWhiteSpace(methodName) || string.IsNullOrEmpty(customNamespace))
+            throw new ArgumentException("Cannot set SoapAction header as the namespace and/or method is not vaild");
+
+        var xml = stringWriter.ToString();
+
+        var content = new StringContent(xml, Encoding.UTF8, "text/xml");
         content.Headers.Add("SOAPAction", $"\"{customNamespace}{methodName}\"");
         return content;
     }
 
-    //private static TResponse DeserializeSoapResponse<TResponse>(string soapResponse, string customNamespace, string methodName)
-    //    where TResponse : ISoapBody
-    //{
-    //    using var reader = new StringReader(soapResponse);
-
-    //    var serializer = new XmlSerializer(typeof(SoapEnvelopeResponse<TResponse>));
-    //    var envelope = (SoapEnvelopeResponse<TResponse>)serializer.Deserialize(reader)!;
-
-    //    return envelope.Body.Content;
-    //}
-
-    public static T DeserializeSoapResponse<T>(string xml, string customNamespace, string methodName) where T : class, ISoapBody
+    private static void SerializeProperties<T>(XmlWriter writer, T request)
     {
-        XmlSerializer envelopeSerializer = new XmlSerializer(typeof(SoapEnvelopeResponse));
+        if (request == null) return;
+
+        Type type = request.GetType();
+        foreach (PropertyInfo prop in type.GetProperties())
+        {
+            var value = prop.GetValue(request);
+            if (value != null)
+            {
+                writer.WriteStartElement(prop.Name);
+
+                if (IsSimpleType(prop.PropertyType))
+                {
+                    writer.WriteValue(value);
+                }
+                else
+                {
+                    SerializeProperties(writer, value);
+                }
+
+                writer.WriteEndElement();
+            }
+        }
+    }
+
+    private static bool IsSimpleType(Type type)
+    {
+        return
+            type.IsPrimitive ||
+            type.IsEnum ||
+            type == typeof(string) ||
+            type == typeof(decimal) ||
+            type == typeof(DateTime) ||
+            type == typeof(Guid);
+    }
+
+
+    public static T DeserializeSoapResponse<T>(string soapResponse) where T : class, ISoapBody
+    {
         SoapEnvelopeResponse envelope;
 
-        using (StringReader reader = new StringReader(xml))
+        using (StringReader reader = new(soapResponse))
         {
+            XmlSerializer envelopeSerializer = new(typeof(SoapEnvelopeResponse));
             envelope = (SoapEnvelopeResponse)envelopeSerializer.Deserialize(reader)!;
         }
 
-        if (envelope.Body.Any == null || envelope.Body.Any.Length == 0)
+        if (envelope is not { Body.Any.Length: > 0 })
         {
             throw new InvalidOperationException("The SOAP body is empty.");
         }
 
         // Assume the first element in the Body is the content we want
         XmlElement bodyContent = envelope.Body.Any[0];
-        XmlSerializer bodySerializer = new XmlSerializer(typeof(T));
 
-        using (StringReader reader = new StringReader(bodyContent.OuterXml))
+        using (StringReader reader = new(bodyContent.OuterXml))
         {
+            XmlSerializer bodySerializer = new(typeof(T));
             return (T)bodySerializer.Deserialize(reader)!;
         }
     }
-
-    //private static TResponse DeserializeSoapResponse<TResponse>(string soapResponse, string elementName, string customNamespace)
-    //{
-    //    if (string.IsNullOrWhiteSpace(elementName)) elementName = typeof(TResponse).Name;
-
-    //    using var stringReader = new StringReader(soapResponse);
-    //    using var xmlReader = new XmlTextReader(stringReader);
-    //    // Move to the envelope element
-    //    xmlReader.MoveToContent();
-    //    xmlReader.ReadStartElement("Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
-
-    //    // Move to the body element
-    //    xmlReader.ReadStartElement("Body", "http://schemas.xmlsoap.org/soap/envelope/");
-
-    //    // Move to the response element
-    //    xmlReader.ReadStartElement(elementName, customNamespace);
-
-    //    // Deserialize the response element
-    //    var xmlSerializer = new XmlSerializer(typeof(TResponse));
-    //    var response = (TResponse)xmlSerializer.Deserialize(xmlReader)!;
-
-    //    // Skip the end element of the response
-    //    xmlReader.ReadEndElement();
-
-    //    // Skip the end element of the body and envelope
-    //    xmlReader.ReadEndElement();
-    //    xmlReader.ReadEndElement();
-
-    //    return response!;
-    //}
 }

@@ -52,6 +52,10 @@ builder.Services.AddFluentHttp("identity-server", builder =>
         builder.WithBaseUrl("http://www.dneonline.com/calculator.asmx")
            .WithTimeout(TimeSpan.FromMinutes(2));
     })
+    .AddFluentHttp("data-flex", builder =>
+    {
+        builder.WithBaseUrl("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso");
+    })
     .AddFluentHttp("localhost", (sp, builder) =>
      {
          builder.ForInternalApis()

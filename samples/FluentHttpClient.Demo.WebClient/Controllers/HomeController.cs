@@ -5,87 +5,67 @@ using FluentHttpClient.SoapMessaging;
 using System.Xml.Serialization;
 using System.Xml;
 
-namespace FluentHttpClient.Demo.WebClient.Controllers
+namespace FluentHttpClient.Demo.WebClient.Controllers;
+
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly IFluentHttpClientFactory _clientFactory;
+
+    public HomeController(IFluentHttpClientFactory clientFactory)
     {
-        private readonly IFluentHttpClientFactory _clientFactory;
+        _clientFactory = clientFactory;
+    }
 
-        public HomeController(IFluentHttpClientFactory clientFactory)
-        {
-            _clientFactory = clientFactory;
-        }
+    public async Task<IActionResult> Index()
+    {
+        var client = _clientFactory.Get("localhost");
 
-        public async Task<IActionResult> Index()
-        {
-            var client = _clientFactory.Get("localhost");
+        var resp = await client.Endpoint("/api/values")
+            .WithArgument("foo", "bar")
+            .GetAsync();
 
-            var resp = await client.Endpoint("/api/values")
-                .WithArgument("foo", "bar")
-                .GetAsync();
+        var msg = await resp.Content.ReadAsStringAsync();
 
-            var msg = await resp.Content.ReadAsStringAsync();
+        return View();
+    }
 
-            return View();
-        }
+    public async Task<IActionResult> Soap()
+    {
+        var rand = new Random();
+        var client = _clientFactory.Get("soap");
+        var intA = rand.Next(6, 10);
+        var intB = rand.Next(1, 5);
+        //return the HttpMessage to manually parse response
+        //var response = await client.UsingBaseUrl()
+        //    .UsingBasicAuthentication("", "")
+        //    .SoapPostAsync(new AddRequest(intA, intB), "Add", "http://tempuri.org/");
+        //string content = await response.Content.ReadAsStringAsync();
 
-        public async Task<IActionResult> Soap()
-        {
-            var client = _clientFactory.Get("soap");
+        //returning strongly typed response
+        var addition = await client.UsingBaseUrl()
+          .SoapPostAsync<AddRequest, AddResponse>(new AddRequest(intA, intB), "Add", "http://tempuri.org/");
 
-            var request = new SoapRequest(1, 2);
+        var multiplication = await client.UsingBaseUrl()
+            .SoapPostAsync<MultiplyRequest, MultiplyResponse>(new MultiplyRequest(intA, intB));
 
-            var response = await client.UsingBaseUrl()
-                .SoapPostAsync(request, "Add", "http://tempuri.org/");
+        var url = client.GetBaseUrl();
 
-            string content = await response.Content.ReadAsStringAsync();
-            //var xmlSerializer = new XmlSerializer(typeof(SoapEnvelopeResponse<AddResponse>));
-            //var resp = (SoapEnvelopeResponse<AddResponse>)xmlSerializer.Deserialize(XmlReader.Create(new StringReader(content)))!;
+        var client2 = _clientFactory.Get("data-flex");
+        var responseMessage = await client2.UsingBaseUrl().SoapPostAsync<ListOfContinents>(new());
+        var continents = await responseMessage.Content.ReadAsStringAsync();
 
-            var result = await client.UsingBaseUrl()
-              .SoapPostAsync<SoapRequest, AddResponse>(request, "Add", "http://tempuri.org/", "AddResponse");
+        return View(new SoapViewModel { SoapServiceUrl = url, intA = intA, intB = intB, AdditionResult = addition.AddResult, MultiplicationResult = multiplication.MultiplyResult });
+    }
 
-            return View();
-        }
+    public IActionResult Privacy()
+    {
+        return View();
+    }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-
-        public class SoapRequest
-        {
-            public SoapRequest()
-            {
-
-            }
-
-            public SoapRequest(int inta, int intb)
-            {
-                intA = inta;
-                intB = intb;
-            }
-
-            public int intA { get; set; }
-            public int intB { get; set; }
-        }
-
-        [XmlRoot("AddResponse", Namespace = "http://tempuri.org/")]
-        public class AddResponse: ISoapBody
-        {
-            public AddResponse()
-            {
-
-            }
-
-            [XmlElement]
-            public int AddResult { get; set; }
-        }
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
+
