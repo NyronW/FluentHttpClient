@@ -4,6 +4,7 @@ using System.Diagnostics;
 using FluentHttpClient.SoapMessaging;
 using System.Xml.Serialization;
 using System.Xml;
+using System.Reflection;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 
@@ -35,11 +36,13 @@ public class HomeController : Controller
         var client = _clientFactory.Get("soap");
         var intA = rand.Next(6, 10);
         var intB = rand.Next(1, 5);
+
         //return the HttpMessage to manually parse response
-        //var response = await client.UsingBaseUrl()
-        //    .UsingBasicAuthentication("", "")
-        //    .SoapPostAsync(new AddRequest(intA, intB), "Add", "http://tempuri.org/");
-        //string content = await response.Content.ReadAsStringAsync();
+        var response = await client.UsingBaseUrl()
+            .UsingBasicAuthentication("", "")
+            .SoapPostAsync(new AddRequest(intA, intB), "Add", "http://tempuri.org/");
+
+        string content = await response.Content.ReadAsStringAsync();
 
         //returning strongly typed response
         var addition = await client.UsingBaseUrl()
@@ -51,8 +54,8 @@ public class HomeController : Controller
         var url = client.GetBaseUrl();
 
         var client2 = _clientFactory.Get("data-flex");
-        var responseMessage = await client2.UsingBaseUrl().SoapPostAsync<ListOfContinents>(new());
-        var continents = await responseMessage.Content.ReadAsStringAsync();
+        var continents = await client2.UsingBaseUrl().SoapPostAsync<ListOfContinents, ListOfContinentsByNameResponse>(new());
+
 
         return View(new SoapViewModel { SoapServiceUrl = url, intA = intA, intB = intB, AdditionResult = addition.AddResult, MultiplicationResult = multiplication.MultiplyResult });
     }
@@ -68,4 +71,3 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
-

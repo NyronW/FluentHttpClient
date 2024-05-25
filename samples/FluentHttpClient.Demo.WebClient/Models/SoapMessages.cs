@@ -39,14 +39,14 @@ public class MultiplyRequest : SoapCalculatorRequest
 }
 
 [XmlRoot("AddResponse", Namespace = "http://tempuri.org/")]
-public class AddResponse : ISoapBody
+public class AddResponse : ISoapResponseBody
 {
     [XmlElement]
     public int AddResult { get; set; }
 }
 
 [XmlRoot("MultiplyResponse", Namespace = "http://tempuri.org/")]
-public class MultiplyResponse : ISoapBody
+public class MultiplyResponse : ISoapResponseBody
 {
     [XmlElement]
     public int MultiplyResult { get; set; }
@@ -65,4 +65,25 @@ public class SoapViewModel
 public class ListOfContinents
 {
 
+}
+
+public class TContinent
+{
+    [XmlElement("sCode")]
+    public string SCode { get; set; }
+    [XmlElement("sName")]
+    public string SName { get; set; }
+}
+
+public class ListOfContinentsByNameResult
+{
+    [XmlElement("tContinent")]
+    public List<TContinent> TContinent { get; set; }
+}
+
+[XmlRoot(ElementName = "ListOfContinentsByNameResponse", Namespace = "http://www.oorsprong.org/websamples.countryinfo")]
+public class ListOfContinentsByNameResponse: ISoapResponseBody
+{
+    [XmlElement("ListOfContinentsByNameResult")]
+    public ListOfContinentsByNameResult ListOfContinentsByNameResult { get; set; }
 }

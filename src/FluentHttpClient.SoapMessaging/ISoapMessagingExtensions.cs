@@ -16,6 +16,14 @@ public static class ISoapMessagingExtensions
     }
 
 
+    public static async Task<HttpResponseMessage> SoapPostAsync(this ISendRequestWithBody client, string soapPayload)
+    {
+        HttpContent content = new StringContent(soapPayload, Encoding.UTF8, "text/xml");
+
+        return await ((ISetContentType)client).UsingContentType("text/xml")
+            .PostAsync(content);
+    }
+
     public static async Task<HttpResponseMessage> SoapPostAsync<TRequest>(this ISendRequestWithBody client, TRequest request,
         string methodName = "", string customNamespace = "")
     {
@@ -26,7 +34,7 @@ public static class ISoapMessagingExtensions
     }
 
     public static async Task<TResponse> SoapPostAsync<TRequest, TResponse>(this ISendRequestWithBody client, TRequest request, string methodName = "",
-        string customNamespace = "") where TResponse : class, ISoapBody
+        string customNamespace = "") where TResponse : class
     {
         var response = await client.SoapPostAsync(request, methodName, customNamespace);
         string result = await response.Content.ReadAsStringAsync();
@@ -51,7 +59,7 @@ public static class ISoapMessagingExtensions
             xmlWriter.WriteStartElement(methodName, customNamespace);
 
         // Check if the type has the XmlRoot attribute
-        var xmlRootAttr = request.GetType().GetCustomAttribute<XmlRootAttribute>();
+        var xmlRootAttr = request!.GetType().GetCustomAttribute<XmlRootAttribute>();
         if (xmlRootAttr != null)
         {
             // Use XmlSerializer to serialize the body content
@@ -77,13 +85,15 @@ public static class ISoapMessagingExtensions
         xmlWriter.WriteEndElement(); // envelope element
         xmlWriter.Flush();
 
+        if (customNamespace.EndsWith('/')) customNamespace = customNamespace.Substring(0, customNamespace.Length - 1);
+
         if (string.IsNullOrWhiteSpace(methodName) || string.IsNullOrEmpty(customNamespace))
             throw new ArgumentException("Cannot set SoapAction header as the namespace and/or method is not vaild");
 
         var xml = stringWriter.ToString();
 
         var content = new StringContent(xml, Encoding.UTF8, "text/xml");
-        content.Headers.Add("SOAPAction", $"\"{customNamespace}{methodName}\"");
+        content.Headers.Add("SOAPAction", $"{customNamespace}/{methodName}");
         return content;
     }
 
@@ -125,7 +135,7 @@ public static class ISoapMessagingExtensions
     }
 
 
-    public static T DeserializeSoapResponse<T>(string soapResponse) where T : class, ISoapBody
+    public static T DeserializeSoapResponse<T>(string soapResponse) where T : class
     {
         SoapEnvelopeResponse envelope;
 
