@@ -30,10 +30,7 @@ public class FluentHttpClient : IFluentHttpClient,
     private string _clientSecret = null!;
     private string[] _scopes = null!;
     private bool _requestToken = false;
-    private List<KeyValuePair<string, Stream>> _files = new();
-    public FilterCollection Filters { get; } = new();
-
-    public MediaTypeFormatterCollection Formatters { get; } = new();
+    private List<KeyValuePair<string, Stream>> _files = [];
     #endregion
 
     public FluentHttpClient(string identifier, HttpClient client, IDictionary<string, object?> factoryProperties, IServiceProvider serviceProvider)
@@ -45,6 +42,12 @@ public class FluentHttpClient : IFluentHttpClient,
 
         SetDefaultUserAgent();
     }
+
+    public FilterCollection Filters { get; } = [];
+
+    public MediaTypeFormatterCollection Formatters { get; } = [];
+
+    public ILogger GetLogger() => _serviceProvider.GetRequiredService<ILogger<FluentHttpClient>>();
 
     public  string GetBaseUrl()
     {
