@@ -25,11 +25,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFluentHttp("identity-server", builder =>
 {
     builder.WithTimeout(10);
-}).AddFluentHttp<TodoController>(builder =>
+}).AddFluentHttpClientFilter<MyCustomClientFilter>() //runs for all request
+.AddFluentHttp<TodoController>(builder =>
  {
      builder.WithBaseUrl("https://localhost:18963/")
          .WithHeader("x-api-version", "1.0.0-beta")
-         .AddFilter<TimerHttpClientFilter>()
+         .AddFilter<TimerHttpClientFilter>() //runs only for this client
          .WithTimeout(20)
          .Register();
  }).AddFluentHttp("file-upload", builder =>
