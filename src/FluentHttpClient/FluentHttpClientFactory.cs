@@ -1,15 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 
 namespace FluentHttpClient;
 
 internal sealed class HttpClientDescriptor
 {
     public string BaseUrl { get; set; } = null!;
-    public Dictionary<string, object> Headers { get; set; } = new();
+    public Dictionary<string, object> Headers { get; set; } = [];
+    public FilterCollection Filters { get; set; } = [];
     public TimeSpan? Timeout { get; set; } = null!;
 }
 
@@ -22,21 +19,32 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
 {
     internal static IDictionary<string, HttpClientDescriptor> ClientDescriptions = new Dictionary<string, HttpClientDescriptor>();
     internal static IDictionary<string, IDictionary<string, object?>> _properties = new Dictionary<string, IDictionary<string, object?>>();
-    internal static FilterCollection DefaultFilters { get; } = new();
+    internal static FilterCollection DefaultFilters { get; } = [];
+
 
     internal Func<HttpMessageHandler> PrimaryMessageHandler { get; private set; } = null!;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IServiceProvider _serviceProvider;
-    private Dictionary<string, object> _headers = new();
+    private Dictionary<string, object> _headers = [];
     private string _identifier = null!;
     private string _url = null!;
     private TimeSpan _timeout;
+    private FilterCollection _filters = [];
 
     public FluentHttpClientFactory(IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider)
     {
         _httpClientFactory = httpClientFactory;
         _serviceProvider = serviceProvider;
+    }
+
+    internal static void AddFilter(Type filterType)
+    {
+        if (filterType == null) return;
+        if (!typeof(IHttpClientFilter).IsAssignableFrom(filterType)) return;
+        if (DefaultFilters.Contains(filterType)) return;
+
+        DefaultFilters.Add(filterType);
     }
 
     #region IFluentHttpClientFactory 
@@ -61,6 +69,9 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         var http = _httpClientFactory.CreateClient(identifier);
         http.DefaultRequestHeaders.Clear();
 
+        var props = _properties.TryGetValue(identifier, out var dict) ? dict : new Dictionary<string, object?>();
+        var client = new FluentHttpClient(identifier, http, props, _serviceProvider);
+
         if (descriptor != null)
         {
             if (!string.IsNullOrWhiteSpace(descriptor.BaseUrl)) http.BaseAddress = new Uri(descriptor.BaseUrl);
@@ -68,11 +79,10 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
 
             foreach (var header in descriptor.Headers)
                 http.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToString());
+
+            if (descriptor.Filters.Any())
+                foreach (var filter in descriptor.Filters) client.Filters.Add(filter);
         }
-
-        var props = _properties.TryGetValue(identifier, out var dict) ? dict : new Dictionary<string, object?>();
-
-        var client = new FluentHttpClient(identifier, http, props, _serviceProvider);
 
         foreach (var filter in DefaultFilters)
             client.Filters.Add(filter);
@@ -94,9 +104,10 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         }
 
         _identifier = identifier;
-        _headers = new Dictionary<string, object>();
+        _headers = [];
         _url = string.Empty;
         _timeout = TimeSpan.Zero;
+        _filters = [];
 
         return this;
     }
@@ -126,10 +137,12 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         return this;
     }
 
-    public ISetDefaultHeader AddFilter<TFilter>()
+    public ISetDefaultHeader AddFilter<TFilter>() where TFilter : IHttpClientFilter
     {
-        if (!DefaultFilters.Contains(typeof(TFilter)))
-            DefaultFilters.Add(typeof(TFilter));
+        if (!_filters.Contains(typeof(TFilter)))
+        {
+            _filters.Add(typeof(TFilter));
+        }
 
         return this;
     }
@@ -192,10 +205,10 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
         {
             Timeout = _timeout,
             BaseUrl = _url,
-            Headers = _headers
+            Headers = _headers,
+            Filters = _filters
         });
     }
-
     #endregion
 
     internal bool IsRegistered => ClientDescriptions.ContainsKey(_identifier);

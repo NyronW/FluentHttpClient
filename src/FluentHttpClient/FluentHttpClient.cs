@@ -492,7 +492,7 @@ public class FluentHttpClient : IFluentHttpClient,
 
     private void BuildFilterInstances()
     {
-        _filters ??= new List<IHttpClientFilter>();
+        _filters ??= [];
 
         if (Filters.Count == 0) return;
         if (_filters.Count == Filters.Count) return;

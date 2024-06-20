@@ -31,11 +31,11 @@ builder.Services.AddTransient<ByPassCerValidationHandler>();
 builder.Services.AddFluentHttp("identity-server", builder =>
     {
         builder.WithTimeout(10)
-        .WithHandler(configureHandler);
+                .WithHandler(configureHandler);
     })
     .AddFluentHttp<TodoController>(builder =>
      {
-         builder.WithBaseUrl("https://localhost:18963/api/v2")
+         builder.WithBaseUrl("https://localhost:18963/api/v1")
              .WithHeader("x-api-version", "1.0.0-beta")
              .AddFilter<TimerHttpClientFilter>()
              .WithTimeout(10)

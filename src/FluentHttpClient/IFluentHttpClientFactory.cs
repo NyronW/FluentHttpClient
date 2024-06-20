@@ -24,7 +24,7 @@ public interface IFluentClientBuilderAction : ISetDefaultHeader, IHandlerRegistr
 public interface ISetDefaultHeader : ISetTimeOut, IHandlerRegistration
 {
     ISetDefaultHeader WithHeader(string key, object value);
-    ISetDefaultHeader AddFilter<TFilter>();
+    ISetDefaultHeader AddFilter<TFilter>() where TFilter: IHttpClientFilter;
 }
 
 public interface ISetTimeOut
