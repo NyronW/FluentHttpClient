@@ -12,6 +12,7 @@
     <PackageTags>Fluent Http, Http Client, C#</PackageTags>
     <PackageId>YAFLHttp</PackageId>
     <Product>YAFLHttp</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
