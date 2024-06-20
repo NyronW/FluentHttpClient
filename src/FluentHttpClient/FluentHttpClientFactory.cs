@@ -139,7 +139,7 @@ public sealed class FluentHttpClientFactory : IFluentHttpClientFactory,
 
     public ISetDefaultHeader AddFilter<TFilter>() where TFilter : IHttpClientFilter
     {
-        if (!_filters.Contains(typeof(TFilter)))
+        if (!_filters.Contains(typeof(TFilter)) && !DefaultFilters.Contains(typeof(TFilter)))
         {
             _filters.Add(typeof(TFilter));
         }

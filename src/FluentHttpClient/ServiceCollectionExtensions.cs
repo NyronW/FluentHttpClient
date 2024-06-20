@@ -72,11 +72,11 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddFluentHttpClientFilter<TFilter>(this IServiceCollection services) where TFilter : IHttpClientFilter
     {
-        if (!services.Any(d => d.ImplementationType == typeof(TFilter)))
-        {
-            services.AddTransient(typeof(IHttpClientFilter), typeof(TFilter));
-            FluentHttpClientFactory.AddFilter(typeof(TFilter));
-        }
+        var filterType = typeof(TFilter);
+        if (!services.Any(d => d.ImplementationType == filterType))
+            services.AddTransient(typeof(IHttpClientFilter), filterType);
+
+        FluentHttpClientFactory.AddFilter(filterType);
 
         return services;
     }
@@ -89,10 +89,10 @@ public static class ServiceCollectionExtensions
 
         foreach (var filterType in filterTypes)
         {
-            if (services.Any(d => d.ImplementationType == filterType)) continue;
-
-            services.AddTransient(typeof(IHttpClientFilter), filterType);
             FluentHttpClientFactory.AddFilter(filterType);
+
+            if (services.Any(d => d.ImplementationType == filterType)) continue;
+            services.AddTransient(typeof(IHttpClientFilter), filterType);
         }
 
         return services;
