@@ -9,7 +9,7 @@ public interface ISoapResponseBody { }
 public class SoapEnvelopeResponse
 {
     [XmlElement(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
-    public SoapResponseBody Body { get; set; }
+    public SoapResponseBody? Body { get; set; }
 }
 
 public class SoapResponseBody

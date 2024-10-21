@@ -1,4 +1,4 @@
-﻿using IdentityServer4.Models;
+﻿using Duende.IdentityServer.Models;
 
 namespace FluentHttpClient.Demo.IdentityServer;
 
@@ -6,8 +6,8 @@ internal class Clients
 {
     public static IEnumerable<Client> Get()
     {
-        return new List<Client>
-        {
+        return
+        [
             new Client
             {
                 ClientId = "oauthClient",
@@ -16,6 +16,6 @@ internal class Clients
                 ClientSecrets = new List<Secret> {new Secret("SuperSecretPassword".Sha256())}, // change me!
                 AllowedScopes = new List<string> {"api1.read","api1.write"}
             }
-        };
+        ];
     }
 }

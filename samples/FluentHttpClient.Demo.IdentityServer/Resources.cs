@@ -1,4 +1,4 @@
-﻿using IdentityServer4.Models;
+﻿using Duende.IdentityServer.Models;
 
 namespace FluentHttpClient.Demo.IdentityServer;
 
@@ -6,8 +6,8 @@ internal class Resources
 {
     public static IEnumerable<IdentityResource> GetIdentityResources()
     {
-        return new[]
-        {
+        return
+        [
             new IdentityResources.OpenId(),
             new IdentityResources.Profile(),
             new IdentityResources.Email(),
@@ -16,31 +16,31 @@ internal class Resources
                 Name = "role",
                 UserClaims = new List<string> {"role"}
             }
-        };
+        ];
     }
 
     public static IEnumerable<ApiResource> GetApiResources()
     {
-        return new[]
-        {
+        return
+        [
             new ApiResource
             {
                 Name = "api1",
                 DisplayName = "API #1",
                 Description = "Allow the application to access API #1 on your behalf",
-                Scopes = new List<string> {"api1.read", "api1.write"},
-                ApiSecrets = new List<Secret> {new Secret("ScopeSecret".Sha256())}, // change me!
-                UserClaims = new List<string> {"role"}
+                Scopes = ["api1.read", "api1.write"],
+                ApiSecrets = [new Secret("ScopeSecret".Sha256())], // change me!
+                UserClaims = ["role"]
             }
-        };
+        ];
     }
 
     public static IEnumerable<ApiScope> GetApiScopes()
     {
-        return new[]
-        {
+        return
+        [
             new ApiScope("api1.read", "Read Access to API #1"),
             new ApiScope("api1.write", "Write Access to API #1")
-        };
+        ];
     }
 }

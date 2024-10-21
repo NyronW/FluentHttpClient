@@ -7,11 +7,11 @@ namespace FluentHttpClient.SoapMessaging;
 public class SoapEnvelope
 {
     [XmlElement(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
-    public SoapBody Body { get; set; }
+    public SoapBody? Body { get; set; }
 }
 
 public class SoapBody
 {
     [XmlAnyElement]
-    public XmlElement[] Any { get; set; }
+    public XmlElement[] Any { get; set; } = [];
 }

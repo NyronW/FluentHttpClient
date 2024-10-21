@@ -41,7 +41,7 @@ builder.Services.AddFluentHttp("identity-server", builder =>
              .WithHandler<ByPassCerValidationHandler>()
              .Register();
      })
-    .AddFluentHttp("file-upload", builder =>
+    .AddFluentHttp<FileController>(builder =>
      {
          builder.WithBaseUrl("https://localhost:18963/api/v1/files")
             .WithTimeout(TimeSpan.FromMinutes(2));
@@ -60,7 +60,11 @@ builder.Services.AddFluentHttp("identity-server", builder =>
          builder.ForInternalApis()
             .WithTimeout(TimeSpan.FromSeconds(10));
      })
-    .AddFluentHttpAstNetCore();
+    .AddFluentHttpAstNetCore() //Needed to support internal(localhost) api
+    .AddFluentHttp("absolute", (sp, builder) =>
+    {
+        builder.WithTimeout(TimeSpan.FromSeconds(10));
+    });
 
 
 var app = builder.Build();

@@ -5,16 +5,18 @@ namespace FluentHttpClient.Demo.WebClient.Controllers;
 
 public class FileController : Controller
 {
-    private readonly IFluentHttpClientFactory _httpClientFactory;
+    private readonly IFluentHttpClient<FileController> _httpClient;
+    private readonly IFluentHttpClientFactory _factory;
 
-    public FileController(IFluentHttpClientFactory httpClientFactory)
+    public FileController(IFluentHttpClient<FileController> httpClient, IFluentHttpClientFactory factory)
     {
-        _httpClientFactory = httpClientFactory;
+        _httpClient = httpClient;
+        _factory = factory;
     }
 
     public IActionResult Index()
     {
-        var unregisteredClient = _httpClientFactory.Get("UnRegisteredHttpClient");
+        var unregisteredClient = _factory.Get("UnRegisteredHttpClient");
 
         return View();
     }
@@ -35,9 +37,7 @@ public class FileController : Controller
         }
 
         var bearer = await GetAuthToken();
-        var client = _httpClientFactory.Get("file-upload");
-
-        var respMsg = await client
+        var respMsg = await _httpClient
             .UsingBaseUrl()
             .WithHeader("x-request-client-type", "net60-aspnet")
             .WithCorrelationId("R5cCI6IkpXVCJ9.post")
@@ -67,7 +67,7 @@ public class FileController : Controller
             .WithFormUrlEncodedContent(content)
             .Create();
 
-        var respMsg = await _httpClientFactory.Get("identity-server").Endpoint("https://localhost:7094/connect/token")
+        var respMsg = await _factory.Get("identity-server").Endpoint("https://localhost:7094/connect/token")
                 .SendAsync(request);
 
         var result = await respMsg.GetResultAsync<AccessToken>();

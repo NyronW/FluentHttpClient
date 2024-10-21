@@ -40,7 +40,8 @@ public static class HttpExtensions
             return new ErrorResult<TModel>("Response content was null");
         }
 
-        var model = await response.Content.ReadAsAsync<TModel>(new MediaTypeFormatterCollection(), token);
+        var formatters = new MediaTypeFormatterCollection();
+        var model = await response.Content.ReadAsAsync<TModel>(formatters, token);
         if (model == null)
         {
             return new ErrorResult<TModel>("Failed to deserialize response");

@@ -9,8 +9,7 @@ namespace FluentHttpClient.Demo.WebClient.Controllers;
 
 public class TodoController : Controller
 {
-    private readonly IFluentHttpClientFactory _clientFactory;
-
+    private readonly IFluentHttpClient _fluentHttpClient;
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
             .Handle<HttpRequestException>() // Specify the exceptions on which to retry.
             .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode) // Optionally, retry on unsuccessful HTTP response codes.
@@ -18,16 +17,13 @@ public class TodoController : Controller
                  TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // Exponential back-off. e.g., 2s, 4s, 8s.
             );
 
-    public TodoController(IFluentHttpClientFactory clientFactory)
+    public TodoController(IFluentHttpClient<TodoController> fluentHttpClient)
     {
-        _clientFactory = clientFactory;
+        _fluentHttpClient = fluentHttpClient;
     }
 
     public async Task<IActionResult> Index(int pageNo = 1, int pageSize = 10)
     {
-        var client = _clientFactory.Get<TodoController>();
-        var bearer = await GetAuthToken();
-
         var args = new Dictionary<string, object>
         (
             [
@@ -36,12 +32,12 @@ public class TodoController : Controller
             ]
         );
 
-        using var response = await client
+        using var response = await _fluentHttpClient
             .Endpoint("todos")
             //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
             .WithArguments(args)
             .WithGeneratedCorelationId()
-            .UsingBearerToken(bearer.Token)
+            .UsingIdentityServer("https://localhost:7094", "oauthClient", "SuperSecretPassword", "api1.read")
             .GetAsync();
 
         //todo:implement client side streams
@@ -80,16 +76,15 @@ public class TodoController : Controller
         if (todoItem == null)
             return View();
 
-        var client = _clientFactory.Get<TodoController>();
         var cts = new CancellationTokenSource();
 
-        var respMsg = await client
-            .Endpoint("/todos")
+        var respMsg = await _fluentHttpClient
+            .Endpoint("todos")
             .WithHeader("x-request-client-type", "net60-aspnet")
             .WithCorrelationId("R5cCI6IkpXVCJ9.post")
             .UsingJsonFormat()
             .WithCancellationToken(cts.Token)
-            .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
+            .UsingIdentityServer("https://localhost:7094", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
             .PostAsync(todoItem);
 
         var result = await respMsg.GetResultAsync<TodoItem>();
@@ -98,7 +93,7 @@ public class TodoController : Controller
         {
             if (result.Retryable)
             {
-                result = await respMsg.RetryResultAsync<TodoItem>(client);
+                result = await respMsg.RetryResultAsync<TodoItem>(_fluentHttpClient);
 
                 if (result.Success)
                 {
@@ -118,11 +113,11 @@ public class TodoController : Controller
 
     public async Task<IActionResult> Details(string id)
     {
-        var response = await _clientFactory.Get<TodoController>()
-            .Endpoint($"/api/v1/todos/{id}")
+        var response = await _fluentHttpClient
+            .Endpoint($"todos/{id}")
             .WithCorrelationId("R5cCI6IkpXVCJ9.get")
             .UsingXmlFormat()
-            .UsingIdentityServer("https://localhost:7094/connect/token", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
+            .UsingIdentityServer("https://localhost:7094", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
             .GetAsync(retryPolicy);
 
         var result = await response.GetResultAsync<TodoItem>();
@@ -142,50 +137,5 @@ public class TodoController : Controller
         var item = result.Data;
 
         return View(item);
-    }
-
-    private async Task<AccessToken> GetAuthToken()
-    {
-        var content = new FormUrlEncodedContent(new KeyValuePair<string?, string?>[]
-        {
-            new("client_id", "oauthClient"),
-            new("client_secret", "SuperSecretPassword"),
-            new("scope", "api1.read api1.write"),
-            new("grant_type", "client_credentials")
-        });
-
-
-        var policy = Policy
-            .Handle<HttpRequestException>() // Specify the exceptions on which to retry.
-            .OrResult<AccessToken>(a => string.IsNullOrWhiteSpace(a.Token)) // Optionally, retry on unsuccessful HTTP response codes.
-            .WaitAndRetryAsync(3, retryAttempt =>
-                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // Exponential back-off. e.g., 2s, 4s, 8s.
-            );
-
-
-        var circuitBreakerPolicy = Policy<AccessToken>
-            .HandleResult(a => string.IsNullOrWhiteSpace(a.Token)) // Assuming empty access token indicates a need to break the circuit
-            .CircuitBreakerAsync(2, TimeSpan.FromMinutes(1));
-
-        var timeoutPolicy = Policy
-             .TimeoutAsync<AccessToken>(TimeSpan.FromSeconds(10));
-
-        var fallbackPolicy = Policy<AccessToken>
-            .Handle<HttpRequestException>()
-            .FallbackAsync(fallbackValue: new AccessToken("", 00)!);
-
-        var bulkheadPolicy = Policy
-            .BulkheadAsync<AccessToken>(maxParallelization: 3, maxQueuingActions: 6);
-
-        var policyWrap = policy.WrapAsync(circuitBreakerPolicy);
-
-
-        var noOpPolicy = Policy.NoOpAsync<AccessToken>();
-
-
-        var authToken = await _clientFactory.Get("identity-server").Endpoint("https://localhost:7094/connect/token")
-                .PostAsync(content, noOpPolicy);
-
-        return authToken;
     }
 }

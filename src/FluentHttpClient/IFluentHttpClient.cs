@@ -15,6 +15,12 @@ public interface IFluentHttpClient
     bool HasHeader(string name);
 }
 
+public interface IFluentHttpClient<TConsumer> : IFluentHttpClient
+{
+    
+}
+
+
 public interface ISetHttpHandler : IAssignEndpoint
 {
     ISendOrCancel SetHandler();

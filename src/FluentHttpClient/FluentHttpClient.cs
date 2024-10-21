@@ -437,7 +437,7 @@ public class FluentHttpClient : IFluentHttpClient,
             return baseUrl;
 
         resource = resource.Trim();
-        UriBuilder builder = new UriBuilder(baseUrl);
+        UriBuilder builder = new(baseUrl);
 
         if (!string.IsNullOrWhiteSpace(builder.Fragment) || resource.StartsWith("#"))
             return new Uri(baseUrl + resource);
@@ -481,7 +481,7 @@ public class FluentHttpClient : IFluentHttpClient,
 
         if (body != null)
         {
-            var formatter = Formatters.Single(f => f.SupportedMediaTypes.Any(m => m.MediaType.Equals(_contentType)));
+            var formatter = Formatters.Single(f => f.SupportedMediaTypes.Any(m => m.MediaType!.Equals(_contentType)));
             var content = new ObjectContent<TBody>(body, formatter, _contentType);
 
             request.Content = content;

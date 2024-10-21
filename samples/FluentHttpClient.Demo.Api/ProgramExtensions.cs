@@ -1,8 +1,8 @@
 ﻿using FluentHttpClient.Demo.Api.Features.Todo;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using MinimalEndpoints;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FluentHttpClient.Demo.Api
 {
@@ -59,13 +59,15 @@ namespace FluentHttpClient.Demo.Api
 
             builder.Services.AddSingleton<ITodoRepository, TodoRepository>();
 
-            builder.Services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
-                .AddIdentityServerAuthentication(options =>
+            builder.Services.AddAuthentication("Bearer")
+                .AddJwtBearer(options =>
                 {
                     options.RequireHttpsMetadata = false;         //False for local addresses, true ofcourse for live scenarios
                     options.Authority = "https://localhost:7094/";//IdentityServer URL
-                    options.ApiName = "api1";
-                    options.ApiSecret = "ScopeSecret";
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateAudience = false
+                    };
                 });
 
             builder.Services.AddAuthorization();

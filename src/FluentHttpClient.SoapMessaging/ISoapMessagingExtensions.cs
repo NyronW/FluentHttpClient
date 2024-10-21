@@ -8,7 +8,7 @@ namespace FluentHttpClient.SoapMessaging;
 
 public static class ISoapMessagingExtensions
 {
-    private static readonly ConcurrentDictionary<Type, XmlSerializer> serializers = new ConcurrentDictionary<Type, XmlSerializer>();
+    private static readonly ConcurrentDictionary<Type, XmlSerializer> serializers = new();
 
     private static XmlSerializer GetOrCreateSerializer(Type type)
     {

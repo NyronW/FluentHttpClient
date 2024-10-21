@@ -60,8 +60,17 @@ public class HomeController : Controller
         return View(new SoapViewModel { SoapServiceUrl = url, intA = intA, intB = intB, AdditionResult = addition.AddResult, MultiplicationResult = multiplication.MultiplyResult });
     }
 
-    public IActionResult Privacy()
+    public async Task<IActionResult> Privacy()
     {
+        var client = _clientFactory.Get("absolute");
+
+        var resp = await client.Endpoint("https://cat-fact.herokuapp.com/facts/")
+                        .GetAsync();
+
+        resp.EnsureSuccessStatusCode();
+
+        var result = await resp.Content.ReadAsStringAsync();
+
         return View();
     }
 

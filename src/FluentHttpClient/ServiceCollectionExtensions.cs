@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace FluentHttpClient;
 
@@ -20,8 +21,25 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddFluentHttp<TType>(this IServiceCollection services, Action<IFluentClientBuilderAction> action)
-        => services.AddFluentHttp(typeof(TType).FullName!, action);
+    public static IServiceCollection AddFluentHttp<TConsumer>(this IServiceCollection services, Action<IFluentClientBuilderAction> action)
+        where TConsumer : class
+    {
+        services.AddFluentHttp(typeof(TConsumer).FullName!, action);
+
+        services.AddTransient<IFluentHttpClient<TConsumer>>(sp =>
+        {
+            var consumerName = typeof(TConsumer).FullName!;
+
+            var factory = sp.GetRequiredService<IFluentHttpClientFactory>();
+            var client = factory.Get(consumerName);
+
+            return client == null
+                ? throw new InvalidOperationException($"No registered client for {consumerName}")
+                : new TypedFluentHttpClient<TConsumer>(client);
+        });
+
+        return services;
+    }
 
     public static IServiceCollection AddFluentHttp(this IServiceCollection services, string name, Action<IFluentClientBuilderAction> action)
     {
@@ -44,6 +62,7 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
 
     public static IServiceCollection AddFluentHttp<TType>(this IServiceCollection services, Action<IServiceProvider, IFluentClientBuilderAction> action)
             => services.AddFluentHttp(typeof(TType).FullName!, action);

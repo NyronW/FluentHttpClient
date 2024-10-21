@@ -57,7 +57,7 @@ namespace FluentHttpClient.Demo.Api.Features.Todo
             var id = await _repository.CreateAsync(model);
 
             //use content negotiation
-            return Results.Extensions.Created($"/todos/{id}", new TodoItem { Id = id, Title = model.Title, Description = model.Description, Completed = false });
+            return Results.Created($"/todos/{id}", new TodoItem { Id = id, Title = model.Title, Description = model.Description, Completed = false });
         }
 
         //This check can be moved to an external validator library such as FluentValidation
