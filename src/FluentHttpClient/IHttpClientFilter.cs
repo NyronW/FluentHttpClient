@@ -28,14 +28,20 @@ public interface IHttpClientFilter
 public class FluentHttpModel
 {
     public IDictionary<string, object?> Properties { get; }
+    public IServiceProvider ServiceProvider { get; }
     public string Identifier { get; }
     public HttpClient Client { get; }
 
-    public FluentHttpModel(string identifier, HttpClient client,IDictionary<string, object?> properties)
+    public FluentHttpModel(
+        string identifier,
+        HttpClient client,
+        IDictionary<string, object?> properties,
+        IServiceProvider serviceProvider)
     {
         Identifier = identifier;
         Client = client;
         Properties = properties;
+        ServiceProvider = serviceProvider;
     }
 }
 
@@ -43,8 +49,12 @@ public class FluentHttpRequest : FluentHttpModel
 {
     public HttpRequestMessage RequestMessage { get; }
 
-    public FluentHttpRequest(string identifier, HttpClient client, HttpRequestMessage requestMessage,
-        IDictionary<string, object?> properties) :base(identifier, client,properties)
+    public FluentHttpRequest(
+        string identifier,
+        HttpClient client,
+        HttpRequestMessage requestMessage,
+        IDictionary<string, object?> properties,
+        IServiceProvider serviceProvider) :base(identifier, client,properties, serviceProvider)
     {
         RequestMessage = requestMessage;
     }

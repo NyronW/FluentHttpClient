@@ -7,19 +7,28 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient", "src\Flu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.AspNet", "src\FluentHttpClient.AspNet\FluentHttpClient.AspNet.csproj", "{35316BB7-A2DD-49AE-8F97-7E9DE13D09AB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.Api", "samples\FluentHttpClient.Demo.Api\FluentHttpClient.Demo.Api.csproj", "{4794A5EF-8BA0-41DD-97F1-74D1B562F980}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.Api", "src\FluentHttpClient.Demo.Api\FluentHttpClient.Demo.Api.csproj", "{4794A5EF-8BA0-41DD-97F1-74D1B562F980}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.WebClient", "samples\FluentHttpClient.Demo.WebClient\FluentHttpClient.Demo.WebClient.csproj", "{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.WebClient", "src\FluentHttpClient.Demo.WebClient\FluentHttpClient.Demo.WebClient.csproj", "{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{51615B32-B88B-4D3A-92C0-C26C61A4022A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{6F087171-0D11-445A-88E7-7775A491542F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6F087171-0D11-445A-88E7-7775A491542F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.IdentityServer", "samples\FluentHttpClient.Demo.IdentityServer\FluentHttpClient.Demo.IdentityServer.csproj", "{79CEA289-1567-49E8-836D-F5E6C1025D4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.IdentityServer", "src\FluentHttpClient.Demo.IdentityServer\FluentHttpClient.Demo.IdentityServer.csproj", "{79CEA289-1567-49E8-836D-F5E6C1025D4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.Resilience", "src\FluentHttpClient.Resilience\FluentHttpClient.Resilience.csproj", "{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Resilience", "src\FluentHttpClient.Resilience\FluentHttpClient.Resilience.csproj", "{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentHttpClient.SoapMessaging", "src\FluentHttpClient.SoapMessaging\FluentHttpClient.SoapMessaging.csproj", "{76E8AB84-8668-4868-A598-673193F1215E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.SoapMessaging", "src\FluentHttpClient.SoapMessaging\FluentHttpClient.SoapMessaging.csproj", "{76E8AB84-8668-4868-A598-673193F1215E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.SoapMessaging.Resilience", "src\FluentHttpClient.SoapMessaging.Resilience\FluentHttpClient.SoapMessaging.Resilience.csproj", "{5E475C32-8157-4A49-A5E9-1D799CDBF93B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A2BC1976-617B-4A9D-A04D-E918872344DC}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +64,10 @@ Global
 		{76E8AB84-8668-4868-A598-673193F1215E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76E8AB84-8668-4868-A598-673193F1215E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76E8AB84-8668-4868-A598-673193F1215E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E475C32-8157-4A49-A5E9-1D799CDBF93B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E475C32-8157-4A49-A5E9-1D799CDBF93B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E475C32-8157-4A49-A5E9-1D799CDBF93B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E475C32-8157-4A49-A5E9-1D799CDBF93B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -64,9 +77,11 @@ Global
 		{35316BB7-A2DD-49AE-8F97-7E9DE13D09AB} = {51615B32-B88B-4D3A-92C0-C26C61A4022A}
 		{4794A5EF-8BA0-41DD-97F1-74D1B562F980} = {6F087171-0D11-445A-88E7-7775A491542F}
 		{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B} = {6F087171-0D11-445A-88E7-7775A491542F}
+		{6F087171-0D11-445A-88E7-7775A491542F} = {51615B32-B88B-4D3A-92C0-C26C61A4022A}
 		{79CEA289-1567-49E8-836D-F5E6C1025D4C} = {6F087171-0D11-445A-88E7-7775A491542F}
 		{DBF0DE5D-5A22-463D-BA5F-F87074F3F04E} = {51615B32-B88B-4D3A-92C0-C26C61A4022A}
 		{76E8AB84-8668-4868-A598-673193F1215E} = {51615B32-B88B-4D3A-92C0-C26C61A4022A}
+		{5E475C32-8157-4A49-A5E9-1D799CDBF93B} = {51615B32-B88B-4D3A-92C0-C26C61A4022A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C53488C1-B36C-482F-BFD6-334B7BC10F6F}

@@ -19,8 +19,8 @@ public class FluentHttpClient : IFluentHttpClient,
     private readonly HttpClient _client;
     private readonly IDictionary<string, object?> _factoryProperties;
     private readonly IServiceProvider _serviceProvider;
-    private Dictionary<string, object?> _arguments = new();
-    private Dictionary<string, string> _headers = new();
+    private readonly Dictionary<string, object?> _arguments = [];
+    private readonly Dictionary<string, string> _headers = [];
     private CancellationToken _token;
     private string _contentType = "application/json";
     private string _endpoint = null!;
@@ -29,8 +29,8 @@ public class FluentHttpClient : IFluentHttpClient,
     private string _clientId = null!;
     private string _clientSecret = null!;
     private string[] _scopes = null!;
-    private bool _requestToken = false;
-    private List<KeyValuePair<string, Stream>> _files = [];
+    private bool _requestToken;
+    private readonly List<KeyValuePair<string, Stream>> _files = [];
     #endregion
 
     public FluentHttpClient(string identifier, HttpClient client, IDictionary<string, object?> factoryProperties, IServiceProvider serviceProvider)
@@ -49,10 +49,8 @@ public class FluentHttpClient : IFluentHttpClient,
 
     public ILogger GetLogger() => _serviceProvider.GetRequiredService<ILogger<FluentHttpClient>>();
 
-    public  string GetBaseUrl()
-    {
-        return _client.BaseAddress?.AbsoluteUri ?? string.Empty;
-    }
+    public Uri? BaseUrl => _client.BaseAddress;
+    public Uri? RequestUrl => BuildUrl(BaseUrl, _endpoint);
 
     public bool HasHeader(string name)
     {
@@ -166,7 +164,8 @@ public class FluentHttpClient : IFluentHttpClient,
 
         foreach (var arg in headers)
         {
-            if (string.IsNullOrWhiteSpace(arg.Key)) continue;
+            if (string.IsNullOrWhiteSpace(arg.Key))
+                continue;
 
             _client.DefaultRequestHeaders.TryAddWithoutValidation(arg.Key, arg.Value);
 
@@ -259,8 +258,9 @@ public class FluentHttpClient : IFluentHttpClient,
     #region ISendRequest
     public async Task<HttpResponseMessage> GetAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
-        var request = BuildRequest(_endpoint, HttpMethod.Get);
-        return await SendAsync(request, httpCompletionOption);
+        var filters = GetFilterInstances();
+        var request = BuildRequest(_endpoint, HttpMethod.Get, filters);
+        return await SendAsync(request, filters, httpCompletionOption);
     }
 
     public async Task<TResponse> GetAsync<TResponse>()
@@ -279,31 +279,40 @@ public class FluentHttpClient : IFluentHttpClient,
 
     public async Task<HttpResponseMessage> DeleteAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
     {
-        var request = BuildRequest(_endpoint, HttpMethod.Delete);
-        return await SendAsync(request, httpCompletionOption);
+        var filters = GetFilterInstances();
+        var request = BuildRequest(_endpoint, HttpMethod.Delete, filters);
+        return await SendAsync(request, filters, httpCompletionOption);
     }
 
     private async Task<HttpResponseMessage> SendAsync<TRequest>(string endpoint, HttpMethod method, TRequest? payload)
     {
-        var request = BuildRequest(endpoint, method, payload);
-        return await SendAsync(request);
+        var filters = GetFilterInstances();
+        var request = BuildRequest(endpoint, method, payload, filters);
+        return await SendAsync(request, filters);
     }
 
+    public async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead,
+        CancellationToken cancellationToken = default)
+    {
+        return await SendAsync(request, GetFilterInstances(), httpCompletionOption, cancellationToken);
+    }
 
-    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead)
+    internal async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, ICollection<IHttpClientFilter> filters,
+        HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead,
+        CancellationToken? cancellationToken = default)
     {
         var logger = _serviceProvider.GetService<ILogger<FluentHttpClient>>();
         var pair = _headers.SingleOrDefault(h => h.Key.Equals(Headers.CorrelationId, StringComparison.OrdinalIgnoreCase));
-
-        BuildFilterInstances();
 
         using var disposable = logger!.AddContext(nameof(Headers.CorrelationId), pair.Value ?? Guid.NewGuid().ToString());
 
         if (request.RequestUri == null)
             request.RequestUri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
 
-        var req = new FluentHttpRequest(_identifier, _client, request, _factoryProperties);
-        foreach (IHttpClientFilter filter in _filters)
+        var req = new FluentHttpRequest(_identifier, _client, request, _factoryProperties, _serviceProvider);
+        foreach (IHttpClientFilter filter in filters)
         {
             filter.OnRequest(req);
             filter.OnRequest(request);
@@ -316,6 +325,10 @@ public class FluentHttpClient : IFluentHttpClient,
             var accessToken = await GetAccessToken();
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
         }
+        else if (_client.DefaultRequestHeaders.Authorization != null)
+        {
+            request.Headers.Authorization = _client.DefaultRequestHeaders.Authorization;
+        }
 
         if (_files is { Count: > 0 })
         {
@@ -325,16 +338,15 @@ public class FluentHttpClient : IFluentHttpClient,
                 content.Add(request.Content);
             }
 
-            foreach (var file in _files)
+            foreach (KeyValuePair<string, Stream> file in _files)
             {
-                var streamContent = new StreamContent(file.Value);
-                content.Add(streamContent, file.Key, file.Key);
+                content.Add(new StreamContent(file.Value), file.Key, file.Key);
             }
 
             request.Content = content;
         }
 
-        var response = await _client.SendAsync(request, httpCompletionOption, _token);
+        HttpResponseMessage response = await _client.SendAsync(request, httpCompletionOption, cancellationToken ?? _token);
 
         foreach (IHttpClientFilter filter in _filters)
             filter.OnResponse(response);
@@ -377,8 +389,10 @@ public class FluentHttpClient : IFluentHttpClient,
     public async Task<HttpResponseMessage> PostAsync(HttpContent content)
     {
         var uri = BuildUrl(_client.BaseAddress!, _endpoint).WithArguments(_arguments.ToArray()!);
-        var request = new HttpRequestMessage(HttpMethod.Post, uri);
-        request.Content = content;
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = content
+        };
 
         return await SendAsync(request);
     }
@@ -425,38 +439,50 @@ public class FluentHttpClient : IFluentHttpClient,
         SetUserAgent($"FluentHttpClient/{version} (+http://github.com/nyronw/FluentHttpClient)");
     }
 
-    internal static Uri BuildUrl(Uri baseUrl, string resource)
+    internal static Uri BuildUrl(Uri? baseUrl, string resource)
     {
-        if (Uri.TryCreate(resource, UriKind.Absolute, out Uri absoluteUrl))
+        if (Uri.TryCreate(resource, UriKind.Absolute, out Uri? absoluteUrl))
+        {
             return absoluteUrl;
+        }
 
         if (baseUrl == null)
+        {
             throw new FormatException($"Can't use relative URL '{resource}' because no base URL was specified.");
+        }
 
         if (string.IsNullOrWhiteSpace(resource))
+        {
             return baseUrl;
+        }
 
         resource = resource.Trim();
         UriBuilder builder = new(baseUrl);
 
         if (!string.IsNullOrWhiteSpace(builder.Fragment) || resource.StartsWith("#"))
+        {
             return new Uri(baseUrl + resource);
+        }
 
         // special case: if resource is a query string, validate and append it
-        if (resource.StartsWith("?") || resource.StartsWith("&"))
+        if (resource.StartsWith('?') || resource.StartsWith('&'))
         {
             bool baseHasQuery = !string.IsNullOrWhiteSpace(builder.Query);
-            if (baseHasQuery && resource.StartsWith("?"))
+            if (baseHasQuery && resource.StartsWith('?'))
+            {
                 resource = resource.Substring(1);
+            }
 
-            if (!baseHasQuery && resource.StartsWith("&"))
+            if (!baseHasQuery && resource.StartsWith('&'))
+            {
                 resource = resource.Substring(1);
+            }
 
             return new Uri(baseUrl + resource);
         }
 
         // else make absolute URL
-        if (!builder.Path.EndsWith("/"))
+        if (!builder.Path.EndsWith('/'))
         {
             builder.Path += "/";
             baseUrl = builder.Uri;
@@ -465,23 +491,23 @@ public class FluentHttpClient : IFluentHttpClient,
         return new Uri(baseUrl, resource);
     }
 
-    private HttpRequestMessage BuildRequest(string endpoint, HttpMethod method)
-        => BuildRequest<object>(endpoint, method, null);
+    private HttpRequestMessage BuildRequest(string endpoint, HttpMethod method, ICollection<IHttpClientFilter> filters)
+        => BuildRequest<object>(endpoint, method, null, filters);
 
-    private HttpRequestMessage BuildRequest<TBody>(string endpoint, HttpMethod method, TBody? body)
+    private HttpRequestMessage BuildRequest<TBody>(string endpoint, HttpMethod method, TBody? body, ICollection<IHttpClientFilter> filters)
     {
-        BuildFilterInstances();
-
-        var model = new FluentHttpModel(_identifier, _client, _factoryProperties);
-        foreach (IHttpClientFilter filter in _filters)
+        var model = new FluentHttpModel(_identifier, _client, _factoryProperties, _serviceProvider);
+        foreach (IHttpClientFilter filter in filters)
+        {
             filter.OnBeforeRequest(model);
+        }
 
-        var uri = BuildUrl(_client.BaseAddress!, endpoint).WithArguments(_arguments.ToArray()!);
+        Uri uri = BuildUrl(model.Client.BaseAddress!, endpoint).WithArguments(_arguments.ToArray()!);
         var request = new HttpRequestMessage(method, uri);
 
-        if (body != null)
+        if (body is not null)
         {
-            var formatter = Formatters.Single(f => f.SupportedMediaTypes.Any(m => m.MediaType!.Equals(_contentType)));
+            MediaTypeFormatter formatter = Formatters.Single(f => f.SupportedMediaTypes.Any(m => m.MediaType!.Equals(_contentType)));
             var content = new ObjectContent<TBody>(body, formatter, _contentType);
 
             request.Content = content;
@@ -490,30 +516,42 @@ public class FluentHttpClient : IFluentHttpClient,
         return request;
     }
 
-    private void BuildFilterInstances()
+    private ICollection<IHttpClientFilter> GetFilterInstances()
     {
         _filters ??= [];
 
-        if (Filters.Count == 0) return;
-        if (_filters.Count == Filters.Count) return;
-
-        foreach (var filter in Filters)
+        if (Filters.Count == 0)
         {
-            if (filter == null) continue;
-            if (_filters.Any(f => f.GetType() == filter)) continue;
-            if (_serviceProvider.GetService(filter) is not IHttpClientFilter instance) continue;
+            return [];
+        }
+
+        if (_filters.Count == Filters.Count)
+        {
+            return _filters;
+        }
+
+        foreach (Type filter in Filters)
+        {
+            if (filter == null || _filters.Any(f => f.GetType() == filter) ||
+                _serviceProvider.GetService(filter) is not IHttpClientFilter instance)
+            {
+                continue;
+            }
 
             _filters.Add(instance);
         }
+
+        return _filters;
     }
 
     private async Task<AccessToken> GetAccessToken()
     {
-        var tokenStorage = _serviceProvider.GetService<AccessTokenStorage>();
+        AccessTokenStorage? tokenStorage = _serviceProvider.GetService<AccessTokenStorage>();
 
-        if (tokenStorage is null) return AccessToken.Empty;
+        if (tokenStorage is null)
+            return AccessToken.Empty;
 
-        var accessToken = await tokenStorage.GetToken(_identityUrl, _clientId, _clientSecret, _scopes);
+        AccessToken accessToken = await tokenStorage.GetToken(_identityUrl, _clientId, _clientSecret, _scopes);
         return accessToken;
     }
     #endregion

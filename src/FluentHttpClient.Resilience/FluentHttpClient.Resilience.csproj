@@ -14,11 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Polly" Version="8.4.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\FluentHttpClient\FluentHttpClient.csproj" />
+    <PackageReference Include="Polly" />
   </ItemGroup>
 
 </Project>

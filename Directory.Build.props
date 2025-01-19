@@ -1,0 +1,37 @@
+﻿<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+    <!-- Define a custom property. Set to true to use the NuGet package -->
+    <UseNuGetForYAFLHttp Condition="'$(Configuration)' == 'Release'">true</UseNuGetForYAFLHttp>
+    <UseNuGetForYAFLHttp Condition="'$(UseNuGetForYAFLHttp)' == ''">false</UseNuGetForYAFLHttp>
+    
+    <!-- Configure code analysis. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
+    <PackageReference Include="SonarAnalyzer.CSharp">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(UseNuGetForYAFLHttp)' == 'true'">
+    <!-- Use the YAFLHttp NuGet package in Release mode -->
+    <PackageReference Include="YAFLHttp" Condition="'$(MSBuildProjectName)' != 'FluentHttpClient'" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseNuGetForYAFLHttp)' == 'false'">
+    <!-- Use the local project reference in Debug mode -->
+    <ProjectReference Include="..\FluentHttpClient\FluentHttpClient.csproj" 
+                      Condition="'$(MSBuildProjectName)' != 'FluentHttpClient'" />
+  </ItemGroup>
+</Project>

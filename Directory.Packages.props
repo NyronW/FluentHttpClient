@@ -1,0 +1,23 @@
+﻿<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Wrapture" Version="1.0.1" />
+    <PackageVersion Include="YAFLHttp" Version="1.0.9" />
+    <PackageVersion Include="YAFLHttp.AspNet" Version="1.0.6" />
+    <PackageVersion Include="YAFLHttp.Resilience" Version="0.0.1" />
+    <PackageVersion Include="YAFLHttp.SoapMessaging" Version="0.0.1" />
+    <PackageVersion Include="Bogus" Version="35.6.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+    <PackageVersion Include="MinimalEndpoints" Version="1.3.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+    <PackageVersion Include="Duende.IdentityServer" Version="7.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.10" />
+    <PackageVersion Include="Polly" Version="8.4.2" />
+    <PackageVersion Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.5.0.109200" />
+  </ItemGroup>
+</Project>

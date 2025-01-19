@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Wrapture" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" />
+    <PackageReference Include="Polly" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseNuGetForYAFLHttp)' == 'true'">
+    <!-- Use the YAFLHttp.SoapMessaging NuGet package in Release mode -->
+    <PackageReference Include="YAFLHttp.AspNet" />
+    <PackageReference Include="YAFLHttp.Resilience" />
+    <PackageReference Include="YAFLHttp.SoapMessaging" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseNuGetForYAFLHttp)' == 'false'">
+    <!-- Use the local project reference in Debug mode -->
+    <ProjectReference Include="..\..\src\FluentHttpClient.AspNet\FluentHttpClient.AspNet.csproj" />
+    <ProjectReference Include="..\..\src\FluentHttpClient.Resilience\FluentHttpClient.Resilience.csproj" />
+    <ProjectReference Include="..\..\src\FluentHttpClient.SoapMessaging\FluentHttpClient.SoapMessaging.csproj" />
+  </ItemGroup>
+
+</Project>

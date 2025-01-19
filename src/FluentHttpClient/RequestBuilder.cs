@@ -6,18 +6,15 @@ public class RequestBuilder : IRequestBuilderActions, ICreateOrSetContent,
     IRequestContentActions
 {
     private readonly HttpMethod _method;
-    private Dictionary<string, object> _arguments = new();
-    private Dictionary<string, string> _headers = new();
+    private readonly Dictionary<string, object> _arguments = [];
+    private readonly Dictionary<string, string> _headers = [];
     private string _correlationId = null!;
     private HttpContent _content = null!;
     private string _contentType = null!;
 
-    private MediaTypeFormatterCollection Formatters { get; } = new();
+    private MediaTypeFormatterCollection Formatters { get; } = [];
 
-    private RequestBuilder(HttpMethod method)
-    {
-        _method = method;
-    }
+    private RequestBuilder(HttpMethod method) => _method = method;
 
     public static IRequestBuilderActions Delete() => new RequestBuilder(HttpMethod.Delete);
 

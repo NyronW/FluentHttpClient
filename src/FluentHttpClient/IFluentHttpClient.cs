@@ -11,7 +11,9 @@ public interface IFluentHttpClient
     IAssignEndpoint Endpoint(string endpoint);
     IAssignEndpoint UsingBaseUrl();
 
-    string GetBaseUrl();
+    Uri? BaseUrl { get; }
+    Uri? RequestUrl { get; }
+
     bool HasHeader(string name);
 }
 
@@ -95,7 +97,7 @@ public interface ISendFileActions : IAssignCancellationToken, ISendRequestWithBo
 
 public interface ISendRequest
 {
-    Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
+    Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead, CancellationToken cancellationToken = default);
     Task<HttpResponseMessage> DeleteAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
     Task<HttpResponseMessage> GetAsync(HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseContentRead);
     Task<TResponse> GetAsync<TResponse>();

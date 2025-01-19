@@ -1,53 +1,62 @@
 ﻿using System.Net;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using Wrapture;
 
 namespace FluentHttpClient;
 
 public static class HttpExtensions
 {
-    public static ICollection<HttpStatusCode> RetryableStatusCodes = new HashSet<HttpStatusCode>()
-    {
+    public static ICollection<HttpStatusCode> RetryableStatusCodes =
+    [
         HttpStatusCode.InternalServerError,
         HttpStatusCode.GatewayTimeout,
         HttpStatusCode.RequestTimeout,
         HttpStatusCode.BadGateway,
         HttpStatusCode.TooManyRequests
-    };
+    ];
 
-    public static bool IsRetryable(this HttpStatusCode statusCode)
-     => RetryableStatusCodes.Contains(statusCode);
+    public static bool IsRetryable(this HttpStatusCode statusCode) => RetryableStatusCodes.Contains(statusCode);
 
     public static async Task<Result<TModel>> GetResultAsync<TModel>(this HttpResponseMessage response, CancellationToken token = default)
     {
-        if (response == null) return new ErrorResult<TModel>("No response return from http call");
+        Either<HttpCallFailure, TModel> either = await GetModelOrFailureAsync<TModel>(response, token);
+        return either.ToResult(e => e.ErrorMessage);
+    }
+
+
+    public static async Task<Either<HttpCallFailure, TModel>> GetModelOrFailureAsync<TModel>(this HttpResponseMessage response, CancellationToken token = default)
+    {
+        if (response == null) return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(HttpStatusCode.ExpectationFailed, "No response return from http call"));
+
+        Uri? uri = response.RequestMessage?.RequestUri;
 
         if (response.StatusCode.IsRetryable())
         {
-            return new ErrorResult<TModel>($"Received retryable status code '{response.StatusCode}'", true);
+            return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, $"Received retryable status code '{response.StatusCode}'", uri, response));
         }
 
         if (!response.IsSuccessStatusCode)
         {
             if (response.StatusCode == HttpStatusCode.NotFound)
-                return new NotFoundResult<TModel>($"Request returned a  404 not found for endpoint:{response.RequestMessage!.RequestUri!.AbsoluteUri}");
+                return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, $"Request returned a  404 not found for endpoint:{response.RequestMessage!.RequestUri!.AbsoluteUri}", uri, response));
 
-            return new ErrorResult<TModel>($"Http call failed with status code: {response.StatusCode}");
+            return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, $"Http call failed with status code: {response.StatusCode}", uri, response));
         }
 
         if (response.Content == null)
         {
-            return new ErrorResult<TModel>("Response content was null");
+            return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, "Response content was null", uri, response));
         }
 
         var formatters = new MediaTypeFormatterCollection();
-        var model = await response.Content.ReadAsAsync<TModel>(formatters, token);
-        if (model == null)
+        TModel? model = await response.Content.ReadAsAsync<TModel>(formatters, token);
+        if (Equals(model, default(TModel)))
         {
-            return new ErrorResult<TModel>("Failed to deserialize response");
+            return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, "Failed to deserialize response", uri, response));
         }
 
-        return new SuccessResult<TModel>(model);
+        return Either<HttpCallFailure, TModel>.Right(model);
     }
 
     public static async Task<HttpResponseMessage> RetryAsync(this HttpResponseMessage response, IFluentHttpClient client, CancellationToken token = default)
@@ -58,14 +67,14 @@ public static class HttpExtensions
 
         var request = await response.RequestMessage!.CloneAsync();
 
-        return await ((FluentHttpClient)client).SendAsync(request);
+        return await ((FluentHttpClient)client).SendAsync(request, cancellationToken: token);
     }
 
     public static async Task<Result<TModel>> RetryResultAsync<TModel>(this HttpResponseMessage response, IFluentHttpClient client, CancellationToken token = default)
     {
         var message = await RetryAsync(response, client, token);
 
-        return await message.GetResultAsync<TModel>();
+        return await message.GetResultAsync<TModel>(token: token);
     }
 
     public static HeaderValue<T> GetValue<T>(this HttpResponseHeaders headers, string name)
