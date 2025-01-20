@@ -13,6 +13,7 @@ internal sealed class TypedFluentHttpClient<TConsumer> : IFluentHttpClient<TCons
     public MediaTypeFormatterCollection Formatters => _innerClient.Formatters;
 
     public IAssignEndpoint Endpoint(string endpoint) => _innerClient.Endpoint(endpoint);
+    public Uri GetRequestUrl() => _innerClient.RequestUrl!;
 
     Uri? IFluentHttpClient.BaseUrl => _innerClient.BaseUrl;
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MinimalEndpoints;
 
 namespace FluentHttpClient.Demo.Api.Features.Todo;
@@ -6,7 +7,7 @@ namespace FluentHttpClient.Demo.Api.Features.Todo;
 [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<TodoItem>))]
 [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
 [Endpoint(TagName = "Todo", OperationId = nameof(GetAllTodoItems))]
-//[Authorize]
+[Authorize]
 public class GetAllTodoItems(ITodoRepository repository) : IEndpoint
 {
     private readonly ITodoRepository _repository = repository;

@@ -1,4 +1,4 @@
-﻿@model List<FluentHttpClient.Demo.WebClient.Models.TodoItem>
+﻿@model FluentHttpClient.AccessToken
 @{
     var cPageNo = Context.Request.Query["pageno"];
     var pageNo = string.IsNullOrEmpty(cPageNo) ? 1 : Convert.ToInt32(cPageNo);
@@ -13,6 +13,10 @@
 }
 <h1>Todo List</h1>
 <hr />
+<p>
+    This demo show how to leverage asynchronous streaming from api (using <a href="https://github.com/NyronW/MinimalEndpoints">MinimalEndpoint</a>) and javascript. The server side async stream
+    code is commented as asp.net view won't show the data being streamed from the API. You can view the code behind to see how async streaming is handled in dotnet clients using FluentHttp
+</p>
 
 @if (TempData["Message"] != null)
 {
@@ -23,15 +27,12 @@
 
 <div class="row pt-2">
     <div class="col-2">
-        <a asp-area="" asp-action="create" class="btn btn-primary">Add new</a>
+        <a asp-area="" asp-action="create" class="btn btn-sm btn-success">Add new</a>
     </div>
 
-    <div class="col-2">
-        <button id="prevPageBtn" class="btn btn-outline-info" onclick="prevPage()" disabled>Prev Page</button>
-    </div>
-
-    <div class="col-2">
-        <button id="nextPageBtn" class="btn btn-outline-info" onclick="nextPage()">Next Page</button>
+    <div class="col-4">
+        <button id="prevPageBtn" class="btn btn-sm btn-primary" onclick="prevPage()" disabled>Prev Page</button>
+        <button id="nextPageBtn" class="btn btn-sm btn-primary" onclick="nextPage()">Next Page</button>
     </div>
 
     <div class="col-3">
@@ -41,9 +42,9 @@
         Page Size
     </div>
     <div class="col-2">
-        <button class="btn btn-link" onclick="changePageSize(10)">10</button>
-        <button class="btn btn-link" onclick="changePageSize(20)">20</button>
-        <button class="btn btn-link" onclick="changePageSize(50)">50</button>
+        <button class="btn round-btn" onclick="changePageSize(10)">10</button>
+        <button class="btn round-btn" onclick="changePageSize(20)">20</button>
+        <button class="btn round-btn" onclick="changePageSize(50)">50</button>
     </div>
 </div>
 
@@ -57,24 +58,50 @@
             <th></th>
         </tr>
     </thead>
-    <tbody>
-        @*
-        @foreach (var item in Model)
-        {
-        <tr>
-        <td>@item.Id</td>
-        <td>@item.Title</td>
-        <td>@item.Completed</td>
-        <td>
-        <a asp-action="details" asp-route-id="@item.Id">View</a>
-        </td>
-        </tr>
-        }
-        *@
-    </tbody>
+    <tbody></tbody>
 </table>
 
+@section Styles {
+    <style>
+        /* Add initial and animated styles for rows */
+        .table-row {
+            opacity: 0; /* Initially hidden */
+            transform: translateY(20px); /* Start slightly below */
+            transition: opacity 0.5s ease, transform 0.5s ease; /* Smooth transition */
+        }
 
+            .table-row.visible {
+                opacity: 1; /* Fully visible */
+                transform: translateY(0); /* Move to the original position */
+            }
+
+        .btn.round-btn {
+            border: 2px solid #007bff; /* Blue border */
+            color: #007bff; /* Blue text */
+            background-color: white; /* White background */
+            width: 40px; /* Set equal width */
+            height: 40px; /* Set equal height */
+            border-radius: 50%; /* Make the button perfectly circular */
+            font-size: 14px; /* Font size */
+            display: inline-flex; /* Center the text */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            cursor: pointer; /* Pointer cursor for hover */
+            transition: all 0.3s ease; /* Smooth hover effect */
+        }
+
+            .btn.round-btn:hover {
+                background-color: #007bff; /* Blue background on hover */
+                color: white; /* White text on hover */
+            }
+
+            .btn.round-btn:focus {
+                outline: none; /* Remove focus outline */
+                box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Focus glow */
+            }
+
+    </style>
+}
 
 @section Scripts {
     <script type="text/javascript">
@@ -107,10 +134,11 @@
 
         async function loadPage() {
             try {
-                const response = await fetch(`https://localhost:18963/api/v1/todos?pageNo=${pageNumber}&pageSize=${pageSize}`, {
+                const response = await fetch(`@(ViewData["ApiUrl"])?pageNo=${pageNumber}&pageSize=${pageSize}`, {
                     method: 'GET',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer @Model.Token'
                     }
                 });
 
@@ -205,6 +233,9 @@
             const tableBody = document.querySelector('#todoTable tbody');
             const row = document.createElement('tr');
 
+            // Add animation classes
+            row.classList.add('table-row');
+
             // Create cells for ID, Title, Description, and Completed
             const idCell = document.createElement('td');
             idCell.textContent = todoItem.id;
@@ -224,6 +255,9 @@
 
             // Append the row to the table body
             tableBody.appendChild(row);
+
+            // Add the `visible` class after a short delay to trigger the animation
+            setTimeout(() => row.classList.add('visible'), 50);
         }
 
         // Call the function when the DOM is ready

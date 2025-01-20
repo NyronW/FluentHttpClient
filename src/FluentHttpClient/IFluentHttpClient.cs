@@ -33,6 +33,7 @@ public interface IAssignEndpoint : IAssignHeaders, IAssignArguments,
     ISendRequestWithBody, ISendAuthenticateOrAttached, IAttachFiles
 {
     ISendOrCancel SetUserAgent(string userAgent);
+    Uri GetRequestUrl();
 }
 
 public interface IAssignHeaders

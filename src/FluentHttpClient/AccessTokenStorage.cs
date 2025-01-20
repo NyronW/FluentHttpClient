@@ -89,6 +89,7 @@ public class AccessToken
     {
         Token = accessToken;
         ExpiresInSeconds = expiresInSeconds;
+        Expires = DateTime.UtcNow.AddSeconds(ExpiresInSeconds);
     }
 
     [Newtonsoft.Json.JsonProperty("access_token")]
@@ -99,7 +100,7 @@ public class AccessToken
     [JsonPropertyName("expires_in")]
     public int ExpiresInSeconds { get; set; }
 
-    public DateTime Expires => DateTime.UtcNow.AddSeconds(ExpiresInSeconds);
+    public DateTime Expires { get; }
 
     public bool Expired => DateTime.UtcNow >= Expires;
 

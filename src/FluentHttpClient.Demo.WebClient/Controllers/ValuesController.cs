@@ -1,15 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace FluentHttpClient.Demo.WebClient.Controllers
+namespace FluentHttpClient.Demo.WebClient.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class ValuesController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ValuesController : ControllerBase
+    [HttpGet]
+    public IActionResult LocalApiTest(string foo)
     {
-        [HttpGet]
-        public IActionResult LocalApiTest(string foo)
-        {
-            return Ok($"Hello world: {foo}");
-        }
+        return Ok($"Hello world: {foo}");
     }
 }

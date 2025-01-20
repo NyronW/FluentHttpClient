@@ -18,7 +18,12 @@ public interface IHttpClientFilter
 
     }
 
+    [Obsolete("This method is deprecated and will be removed in the next version. Use OnRequest(FluentHttpResponse response) instead.")]
     void OnResponse(HttpResponseMessage response)
+    {
+
+    }
+    void OnResponse(FluentHttpResponse response)
     {
 
     }
@@ -45,17 +50,18 @@ public class FluentHttpModel
     }
 }
 
-public class FluentHttpRequest : FluentHttpModel
+public sealed class FluentHttpRequest(
+    string identifier,
+    HttpClient client,
+    HttpRequestMessage requestMessage,
+    IDictionary<string, object?> properties,
+    IServiceProvider serviceProvider) : FluentHttpModel(identifier, client,properties, serviceProvider)
 {
-    public HttpRequestMessage RequestMessage { get; }
+    public HttpRequestMessage RequestMessage { get; } = requestMessage;
+}
 
-    public FluentHttpRequest(
-        string identifier,
-        HttpClient client,
-        HttpRequestMessage requestMessage,
-        IDictionary<string, object?> properties,
-        IServiceProvider serviceProvider) :base(identifier, client,properties, serviceProvider)
-    {
-        RequestMessage = requestMessage;
-    }
+public sealed class FluentHttpResponse(FluentHttpRequest request, HttpResponseMessage responseMessage)
+{
+    public FluentHttpRequest Request { get; } = request;
+    public HttpResponseMessage ResponseMessage { get; } = responseMessage;
 }

@@ -2,19 +2,14 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using FluentHttpClient.SoapMessaging;
-using System.Xml.Serialization;
-using System.Xml;
-using System.Reflection;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 
-public class HomeController(IFluentHttpClientFactory clientFactory) : Controller
+public class HomeController(IFluentHttpClientFactory factory, ILogger<HomeController> logger) : AbstractController(factory, logger)
 {
-    private readonly IFluentHttpClientFactory _clientFactory = clientFactory;
-
     public async Task<IActionResult> Index()
     {
-        var client = _clientFactory.Get("localhost");
+        var client = _factory.Get("localhost");
 
         var resp = await client.Endpoint("/api/values")
             .WithArgument("foo", "bar")
@@ -28,7 +23,7 @@ public class HomeController(IFluentHttpClientFactory clientFactory) : Controller
     public async Task<IActionResult> Soap()
     {
         var rand = new Random();
-        IFluentHttpClient client = _clientFactory.Get("soap");
+        IFluentHttpClient client = _factory.Get("soap");
         int intA = rand.Next(6, 10);
         int intB = rand.Next(1, 5);
 
@@ -48,7 +43,7 @@ public class HomeController(IFluentHttpClientFactory clientFactory) : Controller
 
         string? url = client.BaseUrl?.AbsoluteUri;
 
-        IFluentHttpClient client2 = _clientFactory.Get("data-flex");
+        IFluentHttpClient client2 = _factory.Get("data-flex");
 
         _ = await client2.UsingBaseUrl().SoapPostAsync<ListOfContinents, ListOfContinentsByNameResponse>(new());
 
@@ -58,7 +53,7 @@ public class HomeController(IFluentHttpClientFactory clientFactory) : Controller
 
     public async Task<IActionResult> Privacy()
     {
-        var client = _clientFactory.Get("absolute");
+        var client = _factory.Get("absolute");
 
         HttpResponseMessage resp = await client.Endpoint("https://cat-fact.herokuapp.com/facts/")
                         .GetAsync();

@@ -4,25 +4,18 @@ namespace FluentHttpClient.Demo.IdentityServer;
 
 internal class Resources
 {
-    public static IEnumerable<IdentityResource> GetIdentityResources()
-    {
-        return
-        [
+    public static IEnumerable<IdentityResource> GetIdentityResources() => [
             new IdentityResources.OpenId(),
             new IdentityResources.Profile(),
             new IdentityResources.Email(),
             new IdentityResource
             {
                 Name = "role",
-                UserClaims = new List<string> {"role"}
+                UserClaims = ["role"]
             }
         ];
-    }
 
-    public static IEnumerable<ApiResource> GetApiResources()
-    {
-        return
-        [
+    public static IEnumerable<ApiResource> GetApiResources() => [
             new ApiResource
             {
                 Name = "api1",
@@ -33,14 +26,9 @@ internal class Resources
                 UserClaims = ["role"]
             }
         ];
-    }
 
-    public static IEnumerable<ApiScope> GetApiScopes()
-    {
-        return
-        [
+    public static IEnumerable<ApiScope> GetApiScopes() => [
             new ApiScope("api1.read", "Read Access to API #1"),
             new ApiScope("api1.write", "Write Access to API #1")
         ];
-    }
 }

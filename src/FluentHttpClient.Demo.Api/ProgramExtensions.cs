@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using MinimalEndpoints;
 using Microsoft.IdentityModel.Tokens;
+using MinimalEndpoints.Swashbuckle.AspNetCore;
 
 namespace FluentHttpClient.Demo.Api;
 
@@ -41,10 +42,7 @@ public static class ProgramExtensions
             var xmlFiles = Directory.GetFiles(AppContext.BaseDirectory)
                     .Where(f => Path.GetExtension(f) == ".xml");
 
-            foreach (var xmlFile in xmlFiles)
-            {
-                c.IncludeXmlComments(xmlFile);
-            }
+            c.IncludeXmlComments(xmlFiles);
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
@@ -79,11 +77,26 @@ public static class ProgramExtensions
 
     public static WebApplication ConfigureApplication(this WebApplication app)
     {
-        app.UseCors(opts => opts.AllowAnyHeader().AllowAnyMethod()
-        .AllowAnyOrigin().WithExposedHeaders("x-total-items"));
         app.UseSwagger();
         app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "FluentHttpClient.Demo.Api API"));
         app.UseHttpsRedirection();
+
+        app.UseCors(opts => opts.AllowAnyHeader().AllowAnyMethod()
+            .AllowAnyOrigin().WithExposedHeaders("x-total-items"));
+
+        app.Use(async (context, next) =>
+        {
+            var logger = app.Services.GetRequiredService<ILogger<WebApplication>>();
+
+            logger.LogWarning("=== HTTP Request Headers ===");
+            foreach (var header in context.Request.Headers)
+            {
+                logger.LogWarning($"{header.Key}: {header.Value}");
+            }
+            logger.LogWarning("============================");
+
+            await next();
+        });
 
         app.UseAuthentication();
         app.UseAuthorization();

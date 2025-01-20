@@ -79,6 +79,9 @@ public class FluentHttpClient : IFluentHttpClient,
         return this;
     }
 
+
+    public Uri GetRequestUrl() => BuildUrl(BaseUrl, _endpoint);
+
     public IAssignEndpoint UsingBaseUrl()
     {
         _requestToken = false;
@@ -322,12 +325,8 @@ public class FluentHttpClient : IFluentHttpClient,
 
         if (_requestToken)
         {
-            var accessToken = await GetAccessToken();
+            AccessToken accessToken = await GetAccessToken();
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
-        }
-        else if (_client.DefaultRequestHeaders.Authorization != null)
-        {
-            request.Headers.Authorization = _client.DefaultRequestHeaders.Authorization;
         }
 
         if (_files is { Count: > 0 })
@@ -342,14 +341,27 @@ public class FluentHttpClient : IFluentHttpClient,
             {
                 content.Add(new StreamContent(file.Value), file.Key, file.Key);
             }
-
             request.Content = content;
+        }
+
+        logger.LogDebug("Reqest Header:-");
+        foreach (var header in request.Headers)
+        {
+            logger.LogDebug("\t{Header}={HeaderValue}", header.Key, header.Value);
+        }
+        foreach (var header in _client.DefaultRequestHeaders)
+        {
+            logger.LogDebug("\t{Header}={HeaderValue}", header.Key, header.Value);
         }
 
         HttpResponseMessage response = await _client.SendAsync(request, httpCompletionOption, cancellationToken ?? _token);
 
+        var res = new FluentHttpResponse(req, response);
         foreach (IHttpClientFilter filter in _filters)
+        {
+            filter.OnResponse(res);
             filter.OnResponse(response);
+        }
 
         return response;
     }

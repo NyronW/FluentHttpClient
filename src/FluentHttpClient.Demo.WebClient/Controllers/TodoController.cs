@@ -8,7 +8,10 @@ using Wrapture;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 
-public class TodoController(IFluentHttpClient<TodoController> fluentHttpClient) : Controller
+public class TodoController(
+    IFluentHttpClient<TodoController> fluentHttpClient,
+    IFluentHttpClientFactory factory,
+    ILogger<TodoController> logger) : AbstractController(factory, logger)
 {
     private readonly IFluentHttpClient _fluentHttpClient = fluentHttpClient;
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
@@ -19,7 +22,7 @@ public class TodoController(IFluentHttpClient<TodoController> fluentHttpClient) 
             );
 
     //public async Task<IActionResult> Index(int pageNo = 1, int pageSize = 10)
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         //var args = new Dictionary<string, object>
         //(
@@ -67,7 +70,13 @@ public class TodoController(IFluentHttpClient<TodoController> fluentHttpClient) 
         //}
 
         //return View(data);
-        return View();
+
+        AccessToken token = await GetAuthToken();
+
+        ViewData["ApiUrl"] = _fluentHttpClient
+            .Endpoint("todos").GetRequestUrl().AbsoluteUri;
+
+        return View(token );
     }
 
     public IActionResult Create() => View(new TodoItemDto());
@@ -84,7 +93,7 @@ public class TodoController(IFluentHttpClient<TodoController> fluentHttpClient) 
 
         HttpResponseMessage respMsg = await _fluentHttpClient
             .Endpoint("todos")
-            .WithHeader("x-request-client-type", "net60-aspnet")
+            .WithHeader("x-request-client-type", "net8.0-aspnet")
             .WithCorrelationId("R5cCI6IkpXVCJ9.post")
             .UsingJsonFormat()
             .WithCancellationToken(cts.Token)

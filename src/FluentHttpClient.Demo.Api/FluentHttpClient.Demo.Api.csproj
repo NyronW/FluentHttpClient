@@ -15,6 +15,7 @@
     <PackageReference Include="Bogus" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="MinimalEndpoints" />
+    <PackageReference Include="MinimalEndpoints.Swashbuckle.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
