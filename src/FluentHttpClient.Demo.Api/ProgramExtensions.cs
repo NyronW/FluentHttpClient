@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Models;
 using MinimalEndpoints;
 using Microsoft.IdentityModel.Tokens;
 using MinimalEndpoints.Swashbuckle.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace FluentHttpClient.Demo.Api;
 
@@ -57,20 +58,33 @@ public static class ProgramExtensions
 
         builder.Services.AddSingleton<ITodoRepository, TodoRepository>();
 
-        builder.Services.AddAuthentication("Bearer")
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = false;         //False for local addresses, true ofcourse for live scenarios
-                options.Authority = "https://localhost:7094/";//IdentityServer URL
+                options.RequireHttpsMetadata = true;         
+                options.Authority = "https://localhost:7094"; 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateAudience = false
+                    ValidateIssuer = true,
+                    ValidIssuer = "https://localhost:7094",
+                    ValidateAudience = true,
+                    ValidAudience = "api1",
+                    ValidateLifetime = true,
+                    RequireSignedTokens = true
                 };
             });
 
         builder.Services.AddAuthorization();
 
-        builder.Services.AddCors();
+        builder.Services.AddCors(options => options.AddPolicy("IdentityServerPolicy", policy => policy
+                    .WithOrigins(
+                        "https://localhost:7094",
+                        "https://localhost:7067"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+                    .WithExposedHeaders("x-total-items")));
 
         return builder;
     }
@@ -81,22 +95,7 @@ public static class ProgramExtensions
         app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "FluentHttpClient.Demo.Api API"));
         app.UseHttpsRedirection();
 
-        app.UseCors(opts => opts.AllowAnyHeader().AllowAnyMethod()
-            .AllowAnyOrigin().WithExposedHeaders("x-total-items"));
-
-        app.Use(async (context, next) =>
-        {
-            var logger = app.Services.GetRequiredService<ILogger<WebApplication>>();
-
-            logger.LogWarning("=== HTTP Request Headers ===");
-            foreach (var header in context.Request.Headers)
-            {
-                logger.LogWarning($"{header.Key}: {header.Value}");
-            }
-            logger.LogWarning("============================");
-
-            await next();
-        });
+        app.UseCors("IdentityServerPolicy");
 
         app.UseAuthentication();
         app.UseAuthorization();

@@ -10,10 +10,10 @@ namespace FluentHttpClient.Demo.WebClient.Controllers;
 
 public class TodoController(
     IFluentHttpClient<TodoController> fluentHttpClient,
-    IFluentHttpClientFactory factory,
-    ILogger<TodoController> logger) : AbstractController(factory, logger)
+    AccessTokenStorage tokenStorage) : Controller
 {
     private readonly IFluentHttpClient _fluentHttpClient = fluentHttpClient;
+    private readonly AccessTokenStorage _tokenStorage = tokenStorage;
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
             .Handle<HttpRequestException>() // Specify the exceptions on which to retry.
             .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode) // Optionally, retry on unsuccessful HTTP response codes.
@@ -71,7 +71,7 @@ public class TodoController(
 
         //return View(data);
 
-        AccessToken token = await GetAuthToken();
+        AccessToken token = await _tokenStorage.GetToken("https://localhost:7094", "oauthClient", "SuperSecretPassword", ["api1.read", "api1.write"]);
 
         ViewData["ApiUrl"] = _fluentHttpClient
             .Endpoint("todos").GetRequestUrl().AbsoluteUri;

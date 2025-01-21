@@ -3,8 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.3.1" />
     <PackageVersion Include="Wrapture" Version="1.0.1" />
-    <PackageVersion Include="YAFLHttp" Version="1.0.9" />
+    <PackageVersion Include="YAFLHttp" Version="2.0.0" />
     <PackageVersion Include="YAFLHttp.AspNet" Version="1.0.6" />
     <PackageVersion Include="YAFLHttp.Resilience" Version="0.0.1" />
     <PackageVersion Include="YAFLHttp.SoapMessaging" Version="0.0.1" />

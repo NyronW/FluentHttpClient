@@ -85,6 +85,33 @@ public class TodoController : Controller
 }
 ```
 
+You can also inject a typed client in the consuming class constuctor as follows:
+
+```csharp
+public class TodoController : Controller
+{
+    private readonly IFluentHttpClient _fluentHttpClient;
+
+    public TodoController(IFluentHttpClient<TodoController> fluentHttpClient)
+    {
+        _fluentHttpClient = fluentHttpClient;
+    }
+
+    public async Task<IActionResult> Index(int pageNo = 1, int pageSize = 10)
+    {
+        var items = await _fluentHttpClient
+          .Endpoint("/api/v1/todos")
+          .WithArguments(new { pageNo = pageNo, pageSize = pageSize })
+          .WithGeneratedCorelationId()
+          .GetAsync<TodoItem[]>();
+
+        return View(items);
+    }
+}
+```
+
+The code above will inject the client that was registered using generic method AddFluentHttp<TConsumer> during application startup
+
 ### Register a fluent http client
 
 You can sent a few properties on the http client during registration such as base url, http headers, request time and http filters.
@@ -206,3 +233,67 @@ var respMsg = await client
     }
 
 ```
+ You can also handle http response in a functional manner using the GetModelOrFailureAsync method which returns an [Either](https://www.nuget.org/packages/YAFLHttp) instance that can two possible outcomes such as
+ HttpCallFailure or your custom model.
+
+
+ ```csharp
+ //..
+  [HttpPost]
+    public async Task<IActionResult> Create(TodoItemDto todoItem)
+    {
+        if (todoItem == null)
+        {
+            return View();
+        }
+
+        using var cts = new CancellationTokenSource();
+
+        HttpResponseMessage respMsg = await _fluentHttpClient
+            .Endpoint("todos")
+            .WithHeader("x-request-client-type", "net8.0-aspnet")
+            .WithCorrelationId("R5cCI6IkpXVCJ9.post")
+            .UsingJsonFormat()
+            .WithCancellationToken(cts.Token)
+            .UsingIdentityServer("https://localhost:7094", "oauthClient", "SuperSecretPassword", "api1.read", "api1.write")
+            .PostAsync(todoItem);
+
+        Either<HttpCallFailure, TodoItem> either = await respMsg.GetModelOrFailureAsync<TodoItem>();
+
+        return await either.MatchAsync<IActionResult>(
+            async failure =>
+            {
+                string? errorText = failure.ErrorMessage ?? respMsg.ReasonPhrase;
+                if (failure.IsRetryable)
+                {
+                    var retryResult = await respMsg.RetryResultAsync<TodoItem>(_fluentHttpClient);
+                    if (retryResult.IsSuccess)
+                    {
+                        TempData["Message"] = $"Todo item created with id: {retryResult.Value.Id}";
+                        return RedirectToAction("Index");
+                    }
+
+                    errorText = retryResult.Error;
+                }
+
+                ViewData["ErrorMessage"] = errorText;
+                return View(todoItem);
+            },
+            async success =>
+            {
+                await Task.Yield();
+                TempData["Message"] = $"Todo item created with id: {success.Id}";
+                return RedirectToAction("Index");
+            }
+        );
+    }
+ ```
+
+ ### Supporting Packages
+ 
+ YAFLHttp have the following supporting packages to that you can add to your project to gain additional functionality:
+
+ * YAFLHttp.Resilience - Uses Polly to facilitates various resiliency functions such as retry , circuit breaker etc. This package offer overloads of the existing method ( Get, Post etc) that accepts a specific resilence policy.
+ * YAFLHttp.SoapMessaging - Adds support for interacting with soap services in a fluent manner by adding three new methods to send soap strings or serializable objects to soap endpoints.
+ * YAFLHttp.SoapMessaging.Resilience - Adds resilience to the YAFLHttp.SoapMessaging package.
+ * YAFLHttp.AspNet - Adds useful methods that are needed to web applications such as file updloads and getting correlation id from http header.

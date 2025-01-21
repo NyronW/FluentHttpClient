@@ -16,15 +16,15 @@ public class UploadFile : IEndpoint
     {
         if (!request.HasFormContentType) return Results.BadRequest();
 
-        var form = await request.ReadFormAsync();
-        var tempfile = string.Empty;
+        IFormCollection form = await request.ReadFormAsync();
+        string tempfile = string.Empty;
 
         foreach (var file in form.Files)
         {
             if (file.Length == 0 && string.IsNullOrEmpty(file.FileName))
                 continue;
 
-            if (file.FileName.StartsWith("error")) //simulate retryable feature on client
+            if (file.FileName.StartsWith("error", StringComparison.OrdinalIgnoreCase)) //simulate retryable feature on client
             {
                 return Results.StatusCode(StatusCodes.Status502BadGateway);
             }

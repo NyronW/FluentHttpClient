@@ -12,6 +12,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentHttpClient.Demo.WebClient", "src\FluentHttpClient.Demo.WebClient\FluentHttpClient.Demo.WebClient.csproj", "{8632EC80-8DC2-4F9D-8ED3-7E3BE7BADC7B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{51615B32-B88B-4D3A-92C0-C26C61A4022A}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6F087171-0D11-445A-88E7-7775A491542F}"
 EndProject
