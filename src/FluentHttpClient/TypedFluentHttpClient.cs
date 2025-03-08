@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Formatting;
+﻿using System.Collections.ObjectModel;
+using System.Net.Http.Formatting;
 
 namespace FluentHttpClient;
 
@@ -10,7 +11,7 @@ internal sealed class TypedFluentHttpClient<TConsumer> : IFluentHttpClient<TCons
 
     public FilterCollection Filters => _innerClient.Filters;
 
-    public MediaTypeFormatterCollection Formatters => _innerClient.Formatters;
+    public Collection<MediaTypeFormatter> Formatters => _innerClient.Formatters;
 
     public IAssignEndpoint Endpoint(string endpoint) => _innerClient.Endpoint(endpoint);
     public Uri GetRequestUrl() => _innerClient.RequestUrl!;

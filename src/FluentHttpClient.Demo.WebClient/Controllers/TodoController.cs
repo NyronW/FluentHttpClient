@@ -5,6 +5,7 @@ using Polly;
 using Polly.Retry;
 using FluentHttpClient.Resilience;
 using Wrapture;
+using Wrapture.Pagination;
 
 namespace FluentHttpClient.Demo.WebClient.Controllers;
 
@@ -21,62 +22,35 @@ public class TodoController(
                  TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // Exponential back-off. e.g., 2s, 4s, 8s.
             );
 
-    //public async Task<IActionResult> Index(int pageNo = 1, int pageSize = 10)
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNo = 1, int pageSize = 10)
     {
-        //var args = new Dictionary<string, object>
-        //(
-        //    [
-        //        new KeyValuePair<string, object>("pageNo", pageNo),
-        //        new KeyValuePair<string, object>("pageSize", pageSize)
-        //    ]
-        //);
+        var args = new Dictionary<string, object>
+        (
+            [
+                new KeyValuePair<string, object>("pageNo", pageNo),
+                new KeyValuePair<string, object>("pageSize", pageSize)
+            ]
+        );
 
-        //using HttpResponseMessage response = await _fluentHttpClient
-        //    .Endpoint("todos")
-        //    //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
-        //    .WithArguments(args)
-        //    .WithGeneratedCorelationId()
-        //    .UsingIdentityServer("https://localhost:7094", "oauthClient", "SuperSecretPassword", "api1.read")
-        //    .GetAsync();
+        var pagedTodos = await _fluentHttpClient
+            .Endpoint("todos/pages")
+            //.WithArguments(new { pageNo = pageNo, pageSize = pageSize })
+            .WithArguments(args)
+            .WithGeneratedCorelationId()
+            .UsingIdentityServer("https://localhost:7094", "oauthClient", "SuperSecretPassword", "api1.read")
+            .GetAsync<PagedResult<TodoItem>>();
 
-        //response.EnsureSuccessStatusCode();
+        return View(pagedTodos);
+    }
 
-        //Stream stream = await response.Content.ReadAsStreamAsync();
-
-        //var options = new JsonSerializerOptions
-        //{
-        //    DefaultBufferSize = 10, // Adjust as necessary
-        //    PropertyNameCaseInsensitive = true // If your JSON properties are not case-sensitive
-        //};
-
-        //var data = new List<TodoItem>();
-
-        //await foreach (TodoItem? item in JsonSerializer.DeserializeAsyncEnumerable<TodoItem>(stream, options))
-        //{
-        //    if (item is null)
-        //    {
-        //        continue;
-        //    }
-
-        //    data.Add(item);
-        //}
-
-        //HeaderValue<int> totalItems = response.Headers.GetValue<int>("x-total-items");
-
-        //if (totalItems.HasValue)
-        //{
-        //    ViewData["TotalItems"] = totalItems.Value;
-        //}
-
-        //return View(data);
-
+    public async Task<IActionResult> Index2()
+    {
         AccessToken token = await _tokenStorage.GetToken("https://localhost:7094", "oauthClient", "SuperSecretPassword", ["api1.read", "api1.write"]);
 
         ViewData["ApiUrl"] = _fluentHttpClient
             .Endpoint("todos").GetRequestUrl().AbsoluteUri;
 
-        return View(token );
+        return View(token);
     }
 
     public IActionResult Create() => View(new TodoItemDto());

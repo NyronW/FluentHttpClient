@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Formatting;
+﻿using System.Collections.ObjectModel;
+using System.Net.Http.Formatting;
 
 namespace FluentHttpClient;
 
@@ -6,7 +7,7 @@ public interface IFluentHttpClient
 {
     FilterCollection Filters { get; }
 
-    MediaTypeFormatterCollection Formatters { get; }
+    Collection<MediaTypeFormatter> Formatters { get; }
 
     IAssignEndpoint Endpoint(string endpoint);
     IAssignEndpoint UsingBaseUrl();

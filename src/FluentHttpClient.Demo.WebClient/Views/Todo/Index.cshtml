@@ -1,29 +1,21 @@
-﻿@model FluentHttpClient.AccessToken
+﻿@model Wrapture.Pagination.PagedResult<TodoItem>
 @{
-    var cPageNo = Context.Request.Query["pageno"];
-    var pageNo = string.IsNullOrEmpty(cPageNo) ? 1 : Convert.ToInt32(cPageNo);
+    var pageNo = Model?.Pager is null ? 1 : Model.Pager.CurrentPage;
 
     var nextPageNo = pageNo + 1;
     var prevPageNo = pageNo - 1;
 
     if (prevPageNo < 1) prevPageNo = 1;
 
-    var cPageSize = Context.Request.Query["pagesize"];
-    var pageSize = string.IsNullOrEmpty(cPageSize) ? 10 : Convert.ToInt32(cPageSize);
+    var pageSize = Model?.Pager is null ? 10 : Model.Pager.PageSize;
 }
 <h1>Todo List</h1>
 <hr />
-<p>
-    This demo show how to leverage asynchronous streaming from api (using <a href="https://github.com/NyronW/MinimalEndpoints">MinimalEndpoint</a>) and javascript. The server side async stream
-    code is commented as asp.net view won't show the data being streamed from the API. You can view the code behind to see how async streaming is handled in dotnet clients using FluentHttp
-</p>
 
 @if (TempData["Message"] != null)
 {
     <h5 class="text-info">@TempData["Message"]</h5>
 }
-
-
 
 <div class="row pt-2">
     <div class="col-2">
@@ -31,8 +23,8 @@
     </div>
 
     <div class="col-4">
-        <button id="prevPageBtn" class="btn btn-sm btn-primary" onclick="prevPage()" disabled>Prev Page</button>
-        <button id="nextPageBtn" class="btn btn-sm btn-primary" onclick="nextPage()">Next Page</button>
+        <a id="prevPageBtn" class="btn btn-sm btn-primary" href="/todo/index?pageNo=@prevPageNo&pageSize=@pageSize" disabled>Prev Page</a>
+        <a id="nextPageBtn" class="btn btn-sm btn-primary" href="/todo/index?pageNo=@nextPageNo&pageSize=@pageSize">Next Page</a>
     </div>
 
     <div class="col-3">
@@ -42,9 +34,9 @@
         Page Size
     </div>
     <div class="col-2">
-        <button class="btn round-btn" onclick="changePageSize(10)">10</button>
-        <button class="btn round-btn" onclick="changePageSize(20)">20</button>
-        <button class="btn round-btn" onclick="changePageSize(50)">50</button>
+        <a class="btn round-btn" href="/todo/index?pageNo=@pageNo&pageSize=10">10</a>
+        <a class="btn round-btn" href="/todo/index?pageNo=@pageNo&pageSize=20">20</a>
+        <a class="btn round-btn" href="/todo/index?pageNo=@pageNo&pageSize=50">50</a>
     </div>
 </div>
 
@@ -58,7 +50,18 @@
             <th></th>
         </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+        @if (Model.Items is not null)
+            @foreach (var todo in Model.Items)
+            {
+                <tr>
+                    <td>@todo.Id</td>
+                    <td>@todo.Title</td>
+                    <td>@todo.Description</td>
+                    <td>@todo.Completed</td>
+                </tr>
+            }
+    </tbody>
 </table>
 
 @section Styles {
@@ -101,169 +104,4 @@
             }
 
     </style>
-}
-
-@section Scripts {
-    <script type="text/javascript">
-        let pageNumber = 1;
-        let pageSize = 10;
-
-        async function nextPage() {
-            pageNumber++;
-            document.querySelector('#prevPageBtn').removeAttribute('disabled');
-            await loadPage();
-        }
-
-        async function prevPage() {
-            if (pageNumber <= 1) {
-                return;
-            }
-
-            pageNumber--;
-            await loadPage();
-        }
-
-        async function changePageSize(size) {
-            if (size <= 1) {
-                return;
-            }
-
-            pageSize = size;
-            await loadPage();
-        }
-
-        async function loadPage() {
-            try {
-                const response = await fetch(`@(ViewData["ApiUrl"])?pageNo=${pageNumber}&pageSize=${pageSize}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': 'Bearer @Model.Token'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                if (pageNumber <= 1) {
-                    document.querySelector('#prevPageBtn').setAttribute('disabled', true);
-                }
-
-                // Get the x-total-items value from the response headers
-                const totalItems = response.headers.get('X-Total-Items');
-                console.log('Total Items:', totalItems);
-
-                // Update the total items display if it exists
-                const totalItemsElement = document.querySelector('#totalItems');
-                if (totalItemsElement) {
-                    totalItemsElement.textContent = `Total Items: ${totalItems || 'N/A'}`;
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let jsonBuffer = ''; // Buffer to accumulate chunks
-                let isFirstChunk = true; // Handle the start of the array
-
-                // Clear the current table rows before adding new data
-                const tableBody = document.querySelector('#todoTable tbody');
-                tableBody.innerHTML = '';
-
-                while (true) {
-                    const { value, done } = await reader.read();
-
-                    if (done) {
-                        break;
-                    }
-
-                    // Decode the chunk and append it to the buffer
-                    const chunk = decoder.decode(value, { stream: true }).trim();
-                    jsonBuffer += chunk;
-
-                    // Process the JSON buffer to extract and handle Todo items
-                    jsonBuffer = processJsonBuffer(jsonBuffer, isFirstChunk);
-                    isFirstChunk = false; // Only the first chunk starts with a `[`
-                }
-
-                // Process any remaining buffer (e.g., in case of an incomplete item)
-                processJsonBuffer(jsonBuffer, false, true); // Finalize parsing
-            } catch (error) {
-                console.error('Error fetching Todo items:', error);
-            }
-        }
-
-        function processJsonBuffer(buffer, isFirstChunk, isFinal = false) {
-            if (isFirstChunk) {
-                // Remove the starting bracket "[" from the first chunk
-                buffer = buffer.replace(/^\[/, '');
-            }
-
-            if (isFinal) {
-                // Remove the ending bracket "]" from the last chunk
-                buffer = buffer.replace(/\]$/, '');
-            }
-
-            // Split the buffer into individual JSON objects based on commas
-            const items = buffer.split(/,(?={)/g);
-
-            // Process all complete JSON objects except the last one, which may be incomplete
-            for (let i = 0; i < items.length; i++) {
-                const isLastItem = i === items.length - 1;
-                const jsonString = items[i];
-
-                try {
-                    if (!isLastItem || isFinal) {
-                        // Try parsing the item only if it's not the last incomplete item or we're finalizing
-                        const todoItem = JSON.parse(jsonString.trim());
-                        addRowToTable(todoItem);
-                    } else {
-                        // Leave the last incomplete item in the buffer
-                        return jsonString.trim();
-                    }
-                } catch (err) {
-                    console.error('Error parsing JSON:', err);
-                    return jsonString.trim(); // Return unprocessed portion
-                }
-            }
-
-            return ''; // Return empty buffer if all items are processed
-        }
-
-        function addRowToTable(todoItem) {
-            const tableBody = document.querySelector('#todoTable tbody');
-            const row = document.createElement('tr');
-
-            // Add animation classes
-            row.classList.add('table-row');
-
-            // Create cells for ID, Title, Description, and Completed
-            const idCell = document.createElement('td');
-            idCell.textContent = todoItem.id;
-            row.appendChild(idCell);
-             
-            const titleCell = document.createElement('td');
-            titleCell.textContent = todoItem.title;
-            row.appendChild(titleCell);
-
-            const descriptionCell = document.createElement('td');
-            descriptionCell.textContent = todoItem.description || 'N/A';
-            row.appendChild(descriptionCell);
-
-            const completedCell = document.createElement('td');
-            completedCell.textContent = todoItem.completed ? 'Yes' : 'No';
-            row.appendChild(completedCell);
-
-            // Append the row to the table body
-            tableBody.appendChild(row);
-
-            // Add the `visible` class after a short delay to trigger the animation
-            setTimeout(() => row.classList.add('visible'), 50);
-        }
-
-        // Call the function when the DOM is ready
-        document.addEventListener("DOMContentLoaded", function () {
-            // Load the first page with default page size
-            loadPage(1, 10);
-        });
-    </script>
 }

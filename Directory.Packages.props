@@ -3,23 +3,23 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.3.1" />
-    <PackageVersion Include="Wrapture" Version="1.0.1" />
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.1" />
+    <PackageVersion Include="Wrapture" Version="1.1.3" />
     <PackageVersion Include="YAFLHttp" Version="2.0.0" />
     <PackageVersion Include="YAFLHttp.AspNet" Version="1.0.6" />
     <PackageVersion Include="YAFLHttp.Resilience" Version="0.0.1" />
     <PackageVersion Include="YAFLHttp.SoapMessaging" Version="0.0.1" />
-    <PackageVersion Include="Bogus" Version="35.6.1" />
+    <PackageVersion Include="Bogus" Version="35.6.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.12" />
     <PackageVersion Include="MinimalEndpoints" Version="1.4.1" />
     <PackageVersion Include="MinimalEndpoints.Swashbuckle.AspNetCore" Version="1.1.2" />
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
-    <PackageVersion Include="Duende.IdentityServer" Version="7.1.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    <PackageVersion Include="Duende.IdentityServer" Version="7.1.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.12" />
-    <PackageVersion Include="Polly" Version="8.5.1" />
+    <PackageVersion Include="Polly" Version="8.5.2" />
     <PackageVersion Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.5.0.109200" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.7.0.110445" />
   </ItemGroup>
 </Project>

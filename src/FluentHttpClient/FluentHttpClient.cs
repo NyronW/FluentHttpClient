@@ -4,6 +4,9 @@ using System.Text;
 using System.Net.Http.Formatting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using System.Collections.ObjectModel;
 
 namespace FluentHttpClient;
 
@@ -33,6 +36,11 @@ public class FluentHttpClient : IFluentHttpClient,
     private readonly List<KeyValuePair<string, Stream>> _files = [];
     #endregion
 
+    private static JsonSerializerSettings jsonSerializerSettings = new()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver()
+    };
+
     public FluentHttpClient(string identifier, HttpClient client, IDictionary<string, object?> factoryProperties, IServiceProvider serviceProvider)
     {
         _identifier = identifier ?? Guid.NewGuid().ToString();
@@ -45,7 +53,11 @@ public class FluentHttpClient : IFluentHttpClient,
 
     public FilterCollection Filters { get; } = [];
 
-    public MediaTypeFormatterCollection Formatters { get; } = [];
+    public Collection<MediaTypeFormatter> Formatters { get; } = [
+        new JsonMediaTypeFormatter { SerializerSettings = jsonSerializerSettings },
+        new XmlMediaTypeFormatter(),
+        new FormUrlEncodedMediaTypeFormatter()
+    ];
 
     public ILogger GetLogger() => _serviceProvider.GetRequiredService<ILogger<FluentHttpClient>>();
 
