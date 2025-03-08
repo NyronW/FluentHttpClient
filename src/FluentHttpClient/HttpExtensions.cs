@@ -1,12 +1,21 @@
-﻿using System.Net;
+﻿using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Net;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Wrapture;
 
 namespace FluentHttpClient;
 
 public static class HttpExtensions
 {
+    internal static JsonSerializerSettings JsonSerializerSettings = new()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver()
+    };
+
     public static ICollection<HttpStatusCode> RetryableStatusCodes =
     [
         HttpStatusCode.InternalServerError,
@@ -15,6 +24,12 @@ public static class HttpExtensions
         HttpStatusCode.BadGateway,
         HttpStatusCode.TooManyRequests
     ];
+
+    public static Collection<MediaTypeFormatter> Formatters { get; } = [
+        new JsonMediaTypeFormatter { SerializerSettings = JsonSerializerSettings },
+                new XmlMediaTypeFormatter(),
+                new FormUrlEncodedMediaTypeFormatter()
+        ];
 
     public static bool IsRetryable(this HttpStatusCode statusCode) => RetryableStatusCodes.Contains(statusCode);
 
@@ -49,8 +64,7 @@ public static class HttpExtensions
             return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, "Response content was null", uri, response));
         }
 
-        var formatters = new MediaTypeFormatterCollection();
-        TModel? model = await response.Content.ReadAsAsync<TModel>(formatters, token);
+        TModel? model = await response.Content.ReadAsAsync<TModel>(Formatters, token);
         if (Equals(model, default(TModel)))
         {
             return Either<HttpCallFailure, TModel>.Left(new HttpCallFailure(response.StatusCode, "Failed to deserialize response", uri, response));
@@ -61,18 +75,24 @@ public static class HttpExtensions
 
     public static async Task<HttpResponseMessage> RetryAsync(this HttpResponseMessage response, IFluentHttpClient client, CancellationToken token = default)
     {
-        if (response == null) throw new ApiException(response!, "No response return from http cal");
+        if (response == null)
+        {
+            throw new ApiException(response!, "No response return from http cal");
+        }
 
-        if (response.IsSuccessStatusCode) return response;
+        if (response.IsSuccessStatusCode)
+        {
+            return response;
+        }
 
-        var request = await response.RequestMessage!.CloneAsync();
+        using HttpRequestMessage request = await response.RequestMessage!.CloneAsync();
 
         return await ((FluentHttpClient)client).SendAsync(request, cancellationToken: token);
     }
 
     public static async Task<Result<TModel>> RetryResultAsync<TModel>(this HttpResponseMessage response, IFluentHttpClient client, CancellationToken token = default)
     {
-        var message = await RetryAsync(response, client, token);
+        HttpResponseMessage message = await RetryAsync(response, client, token);
 
         return await message.GetResultAsync<TModel>(token: token);
     }
@@ -81,14 +101,14 @@ public static class HttpExtensions
     {
         if (!headers.TryGetValues(name, out var rawValues)) return new();
 
-        var value = (T)Convert.ChangeType(rawValues.First(), typeof(T));
+        var value = (T)Convert.ChangeType(rawValues.First(), typeof(T), CultureInfo.InvariantCulture);
 
         return new(value);
     }
 
     internal static async Task<HttpRequestMessage> CloneAsync(this HttpRequestMessage request)
     {
-        HttpRequestMessage clone = new HttpRequestMessage(request.Method, request.RequestUri)
+        var clone = new HttpRequestMessage(request.Method, request.RequestUri)
         {
             Content = await request.Content.CloneAsync().ConfigureAwait(false),
             Version = request.Version
@@ -97,7 +117,9 @@ public static class HttpExtensions
         clone.Options.AddRange(request.Options);
 
         foreach (var header in request.Headers)
+        {
             clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
 
         return clone;
     }
@@ -105,15 +127,19 @@ public static class HttpExtensions
     internal static async Task<HttpContent?> CloneAsync(this HttpContent? content)
     {
         if (content == null)
+        {
             return null;
+        }
 
         Stream stream = new MemoryStream();
         await content.CopyToAsync(stream).ConfigureAwait(false);
         stream.Position = 0;
 
-        StreamContent clone = new StreamContent(stream);
+        var clone = new StreamContent(stream);
         foreach (var header in content.Headers)
+        {
             clone.Headers.Add(header.Key, header.Value);
+        }
 
         return clone;
     }
